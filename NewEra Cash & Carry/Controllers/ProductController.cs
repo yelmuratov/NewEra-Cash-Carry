@@ -28,6 +28,7 @@ namespace NewEra_Cash___Carry.Controllers
         }
 
         // Get product by ID - Accessible to any user
+        [Authorize]
         [HttpGet("{id}")]
         public async Task<ActionResult<Product>> GetProductById(int id)
         {

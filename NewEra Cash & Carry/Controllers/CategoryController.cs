@@ -24,7 +24,8 @@ namespace NewEra_Cash___Carry.Controllers
             return await _context.Categories.ToListAsync();
         }
 
-        // Get category by ID - Accessible to any user
+        // Get category by ID - Accessible to any authenticated user
+        [Authorize]
         [HttpGet("{id}")]
         public async Task<ActionResult<Category>> GetCategoryById(int id)
         {
