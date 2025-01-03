@@ -120,6 +120,90 @@ namespace NewEra_Cash___Carry.Controllers
             return Ok(new { message = "Role assigned successfully." });
         }
 
+        // Remove Role - Only accessible to Admins
+        [Authorize(Roles = "Admin")]
+        [HttpPost("remove-role")]
+        public async Task<IActionResult> RemoveRole(int userId, int roleId)
+        {
+            // Fetch the user and their roles
+            var user = await _context.Users
+                .Include(u => u.UserRoles)
+                .FirstOrDefaultAsync(u => u.Id == userId);
+
+            if (user == null)
+            {
+                return NotFound(new { message = "User not found." });
+            }
+
+            // Check if the role exists
+            var userRole = user.UserRoles.FirstOrDefault(ur => ur.RoleId == roleId);
+
+            if (userRole == null)
+            {
+                return BadRequest(new { message = "The user does not have this role." });
+            }
+
+            // Remove the role from the user
+            user.UserRoles.Remove(userRole);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "Role removed successfully." });
+        }
+
+        [HttpPost("logout")]
+        public async Task<IActionResult> Logout()
+        {
+            var token = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+            var jwtToken = new JwtSecurityTokenHandler().ReadToken(token) as JwtSecurityToken;
+
+            if (jwtToken != null)
+            {
+                var expiration = jwtToken.ValidTo;
+
+                // Add the token to the blacklist
+                var blacklistedToken = new BlacklistedToken
+                {
+                    Token = token,
+                    Expiration = expiration
+                };
+
+                _context.BlacklistedTokens.Add(blacklistedToken);
+                await _context.SaveChangesAsync();
+            }
+
+            return Ok(new { message = "Successfully logged out." });
+        }
+
+        [HttpGet("me")]
+        public async Task<ActionResult<UserDto>> GetCurrentUser()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.Name);
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized(new { message = "User is not authenticated." });
+            }
+
+            var user = await _context.Users
+                .Include(u => u.UserRoles)
+                    .ThenInclude(ur => ur.Role)
+                .FirstOrDefaultAsync(u => u.Id == int.Parse(userId));
+
+            if (user == null)
+            {
+                return NotFound(new { message = "User not found." });
+            }
+
+            var userDto = new UserDto
+            {
+                Id = user.Id,
+                PhoneNumber = user.PhoneNumber,
+                Roles = user.UserRoles.Select(ur => ur.Role.Name).ToList()
+            };
+
+            return Ok(userDto);
+        }
+
+
         // Generate JWT token
         private string GenerateJwtToken(User user)
         {

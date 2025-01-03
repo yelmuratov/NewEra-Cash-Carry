@@ -15,6 +15,9 @@ namespace NewEra_Cash___Carry.Data
         public DbSet<Role> Roles { get; set; }
         public DbSet<UserRole> UserRoles { get; set; }
 
+        public DbSet<BlacklistedToken> BlacklistedTokens { get; set; }
+
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             // Configure many-to-many relationship between User and Role

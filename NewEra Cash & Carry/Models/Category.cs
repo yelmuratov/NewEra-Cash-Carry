@@ -13,5 +13,7 @@ namespace NewEra_Cash___Carry.Models
         [StringLength(50)]
 
         public string Name { get; set; }
+
+        public string Description { get; set; }
     }
 }

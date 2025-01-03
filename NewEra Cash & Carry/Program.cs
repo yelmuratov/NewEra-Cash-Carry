@@ -4,6 +4,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using NewEra_Cash___Carry.Data;
 using NewEra_Cash___Carry.Helpers;
+using NewEra_Cash___Carry.Middlewares;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -75,6 +76,9 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+//Middlewares
+app.UseMiddleware<TokenBlacklistMiddleware>();
 
 // Add authentication and authorization middleware
 app.UseAuthentication();

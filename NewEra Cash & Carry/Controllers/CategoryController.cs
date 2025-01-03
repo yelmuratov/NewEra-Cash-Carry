@@ -51,6 +51,7 @@ namespace NewEra_Cash___Carry.Controllers
             var category = new Category
             {
                 Name = categoryDto.Name,
+                Description = categoryDto.Description,
             };
 
             _context.Categories.Add(category);
@@ -71,6 +72,7 @@ namespace NewEra_Cash___Carry.Controllers
             }
 
             category.Name = categoryDto.Name;
+            category.Description = categoryDto.Description;
 
             await _context.SaveChangesAsync();
 
