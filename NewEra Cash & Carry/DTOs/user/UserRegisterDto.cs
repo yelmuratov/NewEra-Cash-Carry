@@ -6,6 +6,7 @@ namespace NewEra_Cash___Carry.DTOs.user
     {
         [Required]
         [StringLength(15)]
+        [RegularExpression(@"^\+?[1-9]\d{1,14}$", ErrorMessage = "Invalid phone number format.")]
         public string PhoneNumber { get; set; }
 
         [Required]
@@ -13,3 +14,4 @@ namespace NewEra_Cash___Carry.DTOs.user
         public string Password { get; set; }
     }
 }
+

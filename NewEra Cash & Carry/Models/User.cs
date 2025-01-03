@@ -8,6 +8,7 @@ namespace NewEra_Cash___Carry.Models
 
         [Required]
         [StringLength(15)]
+        [Phone]
         public string PhoneNumber { get; set; }
 
         [Required]
