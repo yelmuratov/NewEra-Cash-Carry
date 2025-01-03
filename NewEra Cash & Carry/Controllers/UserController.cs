@@ -9,6 +9,7 @@ using System.Security.Claims;
 using System.Text;
 using Microsoft.IdentityModel.Tokens;
 using System.ComponentModel.DataAnnotations;
+using NewEra_Cash___Carry.DTOs.user;
 
 namespace NewEra_Cash___Carry.Controllers
 {
@@ -39,8 +40,20 @@ namespace NewEra_Cash___Carry.Controllers
             var user = new User
             {
                 PhoneNumber = userDto.PhoneNumber,
-                PasswordHash = BCrypt.Net.BCrypt.HashPassword(userDto.Password)
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(userDto.Password),
+                UserRoles = new List<UserRole>()
             };
+
+            // Assign default role (User)
+            var defaultRole = await _context.Roles.FirstOrDefaultAsync(r => r.Name == "User");
+            if (defaultRole != null)
+            {
+                user.UserRoles.Add(new UserRole
+                {
+                    RoleId = defaultRole.Id,
+                    User = user
+                });
+            }
 
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
@@ -71,13 +84,23 @@ namespace NewEra_Cash___Carry.Controllers
             var tokenHandler = new JwtSecurityTokenHandler();
             var key = Encoding.UTF8.GetBytes(_authSettings.Secret);
 
+            var claims = new List<Claim>
+        {
+            new Claim(ClaimTypes.Name, user.Id.ToString()),
+            new Claim(ClaimTypes.MobilePhone, user.PhoneNumber)
+        };
+
+                // Add roles as claims
+            var roles = _context.UserRoles
+                .Where(ur => ur.UserId == user.Id)
+                .Select(ur => ur.Role.Name)
+                .ToList();
+
+            claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
+
             var tokenDescriptor = new SecurityTokenDescriptor
             {
-                Subject = new ClaimsIdentity(new[]
-                {
-                    new Claim(ClaimTypes.Name, user.Id.ToString()),
-                    new Claim(ClaimTypes.MobilePhone, user.PhoneNumber)
-                }),
+                Subject = new ClaimsIdentity(claims),
                 Expires = DateTime.UtcNow.AddHours(1),
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
             };
@@ -85,28 +108,50 @@ namespace NewEra_Cash___Carry.Controllers
             var token = tokenHandler.CreateToken(tokenDescriptor);
             return tokenHandler.WriteToken(token);
         }
-    }
 
-    // DTO for user registration
-    public class UserRegisterDto
-    {
-        [Required]
-        [StringLength(15)]
-        public string PhoneNumber { get; set; }
 
-        [Required]
-        [StringLength(50, MinimumLength = 6)]
-        public string Password { get; set; }
-    }
+        // Get Users
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<UserDto>>> GetUsers()
+        {
+            var users = await _context.Users
+                .Include(u => u.UserRoles)
+                    .ThenInclude(ur => ur.Role)
+                .ToListAsync();
 
-    // DTO for user login
-    public class UserLoginDto
-    {
-        [Required]
-        [StringLength(15)]
-        public string PhoneNumber { get; set; }
+            var userDtos = users.Select(u => new UserDto
+            {
+                Id = u.Id,
+                PhoneNumber = u.PhoneNumber,
+                Roles = u.UserRoles.Select(ur => ur.Role.Name).ToList()
+            }).ToList();
 
-        [Required]
-        public string Password { get; set; }
+            return Ok(userDtos);
+        }
+
+
+        //Assign Role
+        [HttpPost("assign-role")]
+        public async Task<IActionResult> AssignRole(int userId, int roleId)
+        {
+            var user = await _context.Users.Include(u => u.UserRoles).FirstOrDefaultAsync(u => u.Id == userId);
+            var role = await _context.Roles.FindAsync(roleId);
+
+            if (user == null || role == null)
+            {
+                return NotFound("User or Role not found.");
+            }
+
+            if (user.UserRoles.Any(ur => ur.RoleId == roleId))
+            {
+                return BadRequest("User already has this role.");
+            }
+
+            user.UserRoles.Add(new UserRole { UserId = userId, RoleId = roleId });
+            await _context.SaveChangesAsync();
+
+            return Ok("Role assigned successfully.");
+        }
+
     }
 }

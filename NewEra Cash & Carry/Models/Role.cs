@@ -10,7 +10,6 @@ namespace NewEra_Cash___Carry.Models
         [Required]
         [StringLength(50)]
         public string Name { get; set; }
-
         public ICollection<UserRole> UserRoles { get; set; }
     }
 }
