@@ -28,6 +28,7 @@ namespace NewEra_Cash___Carry.Controllers
         }
 
         // GET: api/Products/search
+        // GET: api/Products/search
         [HttpGet("search")]
         public async Task<ActionResult<IEnumerable<Product>>> SearchProducts(
             [FromQuery] string? name,
@@ -35,7 +36,9 @@ namespace NewEra_Cash___Carry.Controllers
             [FromQuery] decimal? minPrice,
             [FromQuery] decimal? maxPrice,
             [FromQuery] int page = 1,
-            [FromQuery] int pageSize = 10)
+            [FromQuery] int pageSize = 10,
+            [FromQuery] string? sortBy = null,
+            [FromQuery] bool ascending = true)
         {
             if (page <= 0 || pageSize <= 0)
             {
@@ -67,6 +70,14 @@ namespace NewEra_Cash___Carry.Controllers
                 query = query.Where(p => p.Price <= maxPrice.Value);
             }
 
+            // Apply sorting
+            query = sortBy?.ToLower() switch
+            {
+                "price" => ascending ? query.OrderBy(p => p.Price) : query.OrderByDescending(p => p.Price),
+                "name" => ascending ? query.OrderBy(p => p.Name) : query.OrderByDescending(p => p.Name),
+                _ => query // Default: No sorting
+            };
+
             // Calculate total count before pagination
             var totalItems = await query.CountAsync();
 
@@ -89,7 +100,6 @@ namespace NewEra_Cash___Carry.Controllers
 
             return Ok(response);
         }
-
 
         // Get product by ID - Accessible to any user
         [Authorize]
