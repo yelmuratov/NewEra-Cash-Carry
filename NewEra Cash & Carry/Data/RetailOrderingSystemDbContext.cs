@@ -14,6 +14,8 @@ namespace NewEra_Cash___Carry.Data
         public DbSet<User> Users { get; set; }
         public DbSet<Role> Roles { get; set; }
         public DbSet<UserRole> UserRoles { get; set; }
+        public DbSet<Order> Orders { get; set; }
+        public DbSet<OrderItem> OrderItems { get; set; }
 
         public DbSet<BlacklistedToken> BlacklistedTokens { get; set; }
 
@@ -33,6 +35,16 @@ namespace NewEra_Cash___Carry.Data
                 .HasOne(ur => ur.Role)
                 .WithMany(r => r.UserRoles)
                 .HasForeignKey(ur => ur.RoleId);
+
+            modelBuilder.Entity<Order>()
+            .HasMany(o => o.OrderItems)
+            .WithOne(oi => oi.Order)
+            .HasForeignKey(oi => oi.OrderId);
+            modelBuilder.Entity<OrderItem>()
+            .HasOne(oi => oi.Product)
+            .WithMany()
+            .HasForeignKey(oi => oi.ProductId);
+            base.OnModelCreating(modelBuilder);
         }
     }
 }
