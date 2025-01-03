@@ -18,6 +18,7 @@ namespace NewEra_Cash___Carry.Data
         public DbSet<OrderItem> OrderItems { get; set; }
 
         public DbSet<BlacklistedToken> BlacklistedTokens { get; set; }
+        public DbSet<ProductImage> ProductImages { get; set; }
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

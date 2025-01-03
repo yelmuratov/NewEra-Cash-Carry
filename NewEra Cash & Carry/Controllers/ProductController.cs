@@ -20,14 +20,27 @@ namespace NewEra_Cash___Carry.Controllers
 
         // Get all products - Accessible to any user
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Product>>> GetProducts()
+        public async Task<ActionResult<IEnumerable<ProductDto>>> GetProducts()
         {
-            return await _context.Products
-                .Include(p => p.Category) // Include category details
+            var products = await _context.Products
+                .Include(p => p.Category)
+                .Include(p => p.ProductImages)
+                .Select(p => new ProductDto
+                {
+                    ProductId = p.ProductId,
+                    Name = p.Name,
+                    Description = p.Description,
+                    Price = p.Price,
+                    Stock = p.Stock,
+                    CategoryName = p.Category.Name,
+                    ImageUrls = p.ProductImages.Select(pi => pi.ImageUrl).ToList()
+                })
                 .ToListAsync();
+
+            return Ok(products);
         }
 
-        // GET: api/Products/search
+
         // GET: api/Products/search
         [HttpGet("search")]
         public async Task<ActionResult<IEnumerable<Product>>> SearchProducts(
@@ -104,15 +117,16 @@ namespace NewEra_Cash___Carry.Controllers
         // Get product by ID - Accessible to any user
         [Authorize]
         [HttpGet("{id}")]
-        public async Task<ActionResult<Product>> GetProductById(int id)
+        public async Task<ActionResult<Product>> GetProduct(int id)
         {
             var product = await _context.Products
-                .Include(p => p.Category) // Include category details
+                .Include(p => p.Category)
+                .Include(p => p.ProductImages) // Include images
                 .FirstOrDefaultAsync(p => p.ProductId == id);
 
             if (product == null)
             {
-                return NotFound();
+                return NotFound(new { message = "Product not found." });
             }
 
             return Ok(product);
@@ -141,7 +155,7 @@ namespace NewEra_Cash___Carry.Controllers
             _context.Products.Add(product);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(GetProductById), new { id = product.ProductId }, product);
+            return CreatedAtAction(nameof(GetProduct), new { id = product.ProductId }, product);
         }
 
         // Update a product - Only accessible to Admins
@@ -190,6 +204,66 @@ namespace NewEra_Cash___Carry.Controllers
             await _context.SaveChangesAsync();
 
             return NoContent();
+        }
+
+        //image upload
+        [HttpPost("{id}/upload-images")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> UploadImages(int id, List<IFormFile> files)
+        {
+            var product = await _context.Products.FindAsync(id);
+            if (product == null)
+            {
+                return NotFound(new { message = "Product not found." });
+            }
+
+            if (files == null || files.Count == 0)
+            {
+                return BadRequest(new { message = "No files uploaded." });
+            }
+
+            var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif" };
+            var imagePath = Path.Combine("wwwroot", "images");
+
+            if (!Directory.Exists(imagePath))
+            {
+                Directory.CreateDirectory(imagePath);
+            }
+
+            var productImages = new List<ProductImage>();
+
+            foreach (var file in files)
+            {
+                var fileExtension = Path.GetExtension(file.FileName).ToLower();
+                if (!allowedExtensions.Contains(fileExtension))
+                {
+                    return BadRequest(new { message = $"Invalid file type: {file.FileName}" });
+                }
+
+                if (file.Length > 5 * 1024 * 1024) // 5 MB
+                {
+                    return BadRequest(new { message = $"File too large: {file.FileName}" });
+                }
+
+                var fileName = $"{Guid.NewGuid()}_{Path.GetFileName(file.FileName)}";
+                var filePath = Path.Combine(imagePath, fileName);
+
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await file.CopyToAsync(stream);
+                }
+
+                productImages.Add(new ProductImage
+                {
+                    ProductId = id,
+                    ImageUrl = $"/images/{fileName}"
+                });
+            }
+
+            _context.ProductImages.AddRange(productImages);
+            await _context.SaveChangesAsync();
+
+            return Ok(productImages.Select(pi => new { pi.Id, pi.ImageUrl }));
         }
 
     }

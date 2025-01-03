@@ -25,6 +25,9 @@ namespace NewEra_Cash___Carry.Models
             [Range(0, int.MaxValue, ErrorMessage = "Stock must be a non-negative value.")]
             public int Stock { get; set; }
 
+            public ICollection<ProductImage> ProductImages { get; set; } = new List<ProductImage>();
+
+
             [Required]
             [ForeignKey("Category")]
             public int CategoryId { get; set; }
