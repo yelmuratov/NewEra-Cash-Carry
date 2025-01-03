@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using NewEra_Cash___Carry.Data;
 using NewEra_Cash___Carry.DTOs.category;
@@ -12,21 +13,21 @@ namespace NewEra_Cash___Carry.Controllers
     {
         private readonly RetailOrderingSystemDbContext _context;
         public CategoryController(RetailOrderingSystemDbContext context)
-        { 
+        {
             _context = context;
         }
 
-        //Get Categories
+        // Get all categories - Accessible to any user
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Category>>>GetCategories()
+        public async Task<ActionResult<IEnumerable<Category>>> GetCategories()
         {
             return await _context.Categories.ToListAsync();
         }
 
-        //Get Product By Id
+        // Get category by ID - Accessible to any user
         [HttpGet("{id}")]
         public async Task<ActionResult<Category>> GetCategoryById(int id)
-        {   
+        {
             var category = await _context.Categories.FindAsync(id);
 
             if (category == null)
@@ -37,8 +38,9 @@ namespace NewEra_Cash___Carry.Controllers
             return Ok(category);
         }
 
-        //Post category
+        // Post category - Only accessible to Admins
         [HttpPost]
+        [Authorize(Roles = "Admin")]
         public async Task<ActionResult<Category>> PostCategory([FromBody] CategoryPostDto categoryDto)
         {
             if (await _context.Categories.AnyAsync(c => c.Name == categoryDto.Name))
@@ -57,9 +59,10 @@ namespace NewEra_Cash___Carry.Controllers
             return CreatedAtAction(nameof(GetCategoryById), new { id = category.CategoryId }, category);
         }
 
-        //Update Category
+        // Update category - Only accessible to Admins
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateCategory(int id, CategoryUpdateDto categoryDto)
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> UpdateCategory(int id, [FromBody] CategoryUpdateDto categoryDto)
         {
             var category = await _context.Categories.FindAsync(id);
             if (category == null)
@@ -74,8 +77,9 @@ namespace NewEra_Cash___Carry.Controllers
             return NoContent();
         }
 
-        //Delete Category
+        // Delete category - Only accessible to Admins
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteCategory(int id)
         {
             var category = await _context.Categories.FindAsync(id);
@@ -86,10 +90,9 @@ namespace NewEra_Cash___Carry.Controllers
             }
 
             _context.Categories.Remove(category);
-            await _context.SaveChangesAsync(); 
+            await _context.SaveChangesAsync();
 
             return NoContent();
         }
-
     }
 }

@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using NewEra_Cash___Carry.Data;
 using NewEra_Cash___Carry.DTOs.product;
@@ -17,7 +18,7 @@ namespace NewEra_Cash___Carry.Controllers
             _context = context;
         }
 
-        // Get all products
+        // Get all products - Accessible to any user
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Product>>> GetProducts()
         {
@@ -26,7 +27,7 @@ namespace NewEra_Cash___Carry.Controllers
                 .ToListAsync();
         }
 
-        // Get product by ID
+        // Get product by ID - Accessible to any user
         [HttpGet("{id}")]
         public async Task<ActionResult<Product>> GetProductById(int id)
         {
@@ -42,8 +43,9 @@ namespace NewEra_Cash___Carry.Controllers
             return Ok(product);
         }
 
-        // Create a new product
+        // Create a new product - Only accessible to Admins
         [HttpPost]
+        [Authorize(Roles = "Admin")]
         public async Task<ActionResult<Product>> PostProduct([FromBody] ProductPostDto productDto)
         {
             // Check if the associated category exists
@@ -67,8 +69,9 @@ namespace NewEra_Cash___Carry.Controllers
             return CreatedAtAction(nameof(GetProductById), new { id = product.ProductId }, product);
         }
 
-        // Update a product
+        // Update a product - Only accessible to Admins
         [HttpPut("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> UpdateProduct(int id, [FromBody] ProductPostDto productDto)
         {
             var product = await _context.Products.FindAsync(id);
@@ -96,8 +99,9 @@ namespace NewEra_Cash___Carry.Controllers
             return NoContent();
         }
 
-        // Delete a product
+        // Delete a product - Only accessible to Admins
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteProduct(int id)
         {
             var product = await _context.Products.FindAsync(id);

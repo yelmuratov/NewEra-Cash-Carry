@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using NewEra_Cash___Carry.Data;
 using NewEra_Cash___Carry.DTOs;
@@ -8,6 +9,7 @@ namespace NewEra_Cash___Carry.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize(Roles = "Admin")] // Admin-only access
     public class RoleController : ControllerBase
     {
         private readonly RetailOrderingSystemDbContext _context;
@@ -69,7 +71,6 @@ namespace NewEra_Cash___Carry.Controllers
                 return NotFound(new { message = "Role not found." });
             }
 
-            // Update role name
             role.Name = roleDto.Name;
             await _context.SaveChangesAsync();
 
