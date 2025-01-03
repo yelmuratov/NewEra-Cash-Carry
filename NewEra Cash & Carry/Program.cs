@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using NewEra_Cash___Carry.Data;
@@ -51,6 +52,9 @@ builder.Services.Configure<AuthSettings>(builder.Configuration.GetSection("AuthS
 
 // Add JWT Authentication
 var authSettings = builder.Configuration.GetSection("AuthSettings").Get<AuthSettings>();
+
+//Payment integration
+builder.Services.Configure<PaymentSettings>(builder.Configuration.GetSection("PaymentSettings"));
 
 builder.Services.AddAuthentication(options =>
 {

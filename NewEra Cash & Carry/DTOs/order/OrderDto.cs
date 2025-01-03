@@ -13,6 +13,7 @@
             public DateTime OrderDate { get; set; }
             public decimal TotalAmount { get; set; }
             public string Status { get; set; }
+            public string PaymentStatus { get; set; }
             public List<OrderItemDto> OrderItems { get; set; }
         }
     }

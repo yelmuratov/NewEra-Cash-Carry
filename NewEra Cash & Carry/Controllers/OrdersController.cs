@@ -39,6 +39,7 @@ namespace NewEra_Cash___Carry.Controllers
                 OrderDate = o.OrderDate,
                 TotalAmount = o.TotalAmount,
                 Status = o.Status,
+                PaymentStatus = o.PaymentStatus,
                 OrderItems = o.OrderItems.Select(oi => new OrderItemDto
                 {
                     ProductId = oi.ProductId,
@@ -74,6 +75,7 @@ namespace NewEra_Cash___Carry.Controllers
                 OrderDate = order.OrderDate,
                 TotalAmount = order.TotalAmount,
                 Status = order.Status,
+                PaymentStatus = order.PaymentStatus, // Include PaymentStatus
                 OrderItems = order.OrderItems.Select(oi => new OrderItemDto
                 {
                     ProductId = oi.ProductId,
@@ -88,6 +90,7 @@ namespace NewEra_Cash___Carry.Controllers
 
         // Create an order
         [HttpPost]
+        [Authorize]
         public async Task<IActionResult> CreateOrder([FromBody] OrderCreateDto orderDto)
         {
             var user = await _context.Users.FindAsync(orderDto.UserId);
@@ -135,6 +138,7 @@ namespace NewEra_Cash___Carry.Controllers
                 OrderDate = order.OrderDate,
                 TotalAmount = order.TotalAmount,
                 Status = order.Status,
+                PaymentStatus = order.PaymentStatus,
                 OrderItems = order.OrderItems.Select(oi => new OrderItemDto
                 {
                     ProductId = oi.ProductId,

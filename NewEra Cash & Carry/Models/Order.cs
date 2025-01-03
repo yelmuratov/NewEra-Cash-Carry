@@ -17,6 +17,7 @@ namespace NewEra_Cash___Carry.Models
         public decimal TotalAmount { get; set; }
 
         public string Status { get; set; } = "Pending"; // e.g., Pending, Completed, Cancelled
+        public string PaymentStatus { get; set; } = "Pending";
 
         public ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
     }
