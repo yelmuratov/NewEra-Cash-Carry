@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using NewEra_Cash___Carry.Data;
@@ -8,13 +9,13 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using Microsoft.IdentityModel.Tokens;
-using System.ComponentModel.DataAnnotations;
 using NewEra_Cash___Carry.DTOs.user;
 
 namespace NewEra_Cash___Carry.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize] // Require authentication for all endpoints by default
     public class UserController : ControllerBase
     {
         private readonly RetailOrderingSystemDbContext _context;
@@ -26,17 +27,16 @@ namespace NewEra_Cash___Carry.Controllers
             _authSettings = authSettings.Value;
         }
 
-        // Register a new user
+        // Register a new user - Open to everyone
+        [AllowAnonymous]
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] UserRegisterDto userDto)
         {
-            // Check if phone number already exists
             if (await _context.Users.AnyAsync(u => u.PhoneNumber == userDto.PhoneNumber))
             {
                 return BadRequest(new { message = "A user with this phone number already exists." });
             }
 
-            // Create new user
             var user = new User
             {
                 PhoneNumber = userDto.PhoneNumber,
@@ -44,7 +44,6 @@ namespace NewEra_Cash___Carry.Controllers
                 UserRoles = new List<UserRole>()
             };
 
-            // Assign default role (User)
             var defaultRole = await _context.Roles.FirstOrDefaultAsync(r => r.Name == "User");
             if (defaultRole != null)
             {
@@ -61,56 +60,24 @@ namespace NewEra_Cash___Carry.Controllers
             return Ok(new { message = "User registered successfully." });
         }
 
-        // Login user
+        // Login user - Open to everyone
+        [AllowAnonymous]
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] UserLoginDto userDto)
         {
             var dbUser = await _context.Users.SingleOrDefaultAsync(u => u.PhoneNumber == userDto.PhoneNumber);
 
-            // Validate user credentials
             if (dbUser == null || !BCrypt.Net.BCrypt.Verify(userDto.Password, dbUser.PasswordHash))
             {
                 return Unauthorized(new { message = "Invalid phone number or password." });
             }
 
-            // Generate JWT token
             var token = GenerateJwtToken(dbUser);
             return Ok(new { Token = token });
         }
 
-        // Generate JWT token
-        private string GenerateJwtToken(User user)
-        {
-            var tokenHandler = new JwtSecurityTokenHandler();
-            var key = Encoding.UTF8.GetBytes(_authSettings.Secret);
-
-            var claims = new List<Claim>
-        {
-            new Claim(ClaimTypes.Name, user.Id.ToString()),
-            new Claim(ClaimTypes.MobilePhone, user.PhoneNumber)
-        };
-
-                // Add roles as claims
-            var roles = _context.UserRoles
-                .Where(ur => ur.UserId == user.Id)
-                .Select(ur => ur.Role.Name)
-                .ToList();
-
-            claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
-
-            var tokenDescriptor = new SecurityTokenDescriptor
-            {
-                Subject = new ClaimsIdentity(claims),
-                Expires = DateTime.UtcNow.AddHours(1),
-                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
-            };
-
-            var token = tokenHandler.CreateToken(tokenDescriptor);
-            return tokenHandler.WriteToken(token);
-        }
-
-
-        // Get Users
+        // Get all users - Only accessible to Admins
+        [Authorize(Roles = "Admin")]
         [HttpGet]
         public async Task<ActionResult<IEnumerable<UserDto>>> GetUsers()
         {
@@ -129,8 +96,8 @@ namespace NewEra_Cash___Carry.Controllers
             return Ok(userDtos);
         }
 
-
-        //Assign Role
+        // Assign Role - Only accessible to Admins
+        [Authorize(Roles = "Admin")]
         [HttpPost("assign-role")]
         public async Task<IActionResult> AssignRole(int userId, int roleId)
         {
@@ -139,19 +106,48 @@ namespace NewEra_Cash___Carry.Controllers
 
             if (user == null || role == null)
             {
-                return NotFound("User or Role not found.");
+                return NotFound(new { message = "User or Role not found." });
             }
 
             if (user.UserRoles.Any(ur => ur.RoleId == roleId))
             {
-                return BadRequest("User already has this role.");
+                return BadRequest(new { message = "User already has this role." });
             }
 
             user.UserRoles.Add(new UserRole { UserId = userId, RoleId = roleId });
             await _context.SaveChangesAsync();
 
-            return Ok("Role assigned successfully.");
+            return Ok(new { message = "Role assigned successfully." });
         }
 
+        // Generate JWT token
+        private string GenerateJwtToken(User user)
+        {
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var key = Encoding.UTF8.GetBytes(_authSettings.Secret);
+
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.Name, user.Id.ToString()),
+                new Claim(ClaimTypes.MobilePhone, user.PhoneNumber)
+            };
+
+            var roles = _context.UserRoles
+                .Where(ur => ur.UserId == user.Id)
+                .Select(ur => ur.Role.Name)
+                .ToList();
+
+            claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
+
+            var tokenDescriptor = new SecurityTokenDescriptor
+            {
+                Subject = new ClaimsIdentity(claims),
+                Expires = DateTime.UtcNow.AddHours(1),
+                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
+            };
+
+            var token = tokenHandler.CreateToken(tokenDescriptor);
+            return tokenHandler.WriteToken(token);
+        }
     }
 }
