@@ -5,6 +5,7 @@ using NewEra_Cash___Carry.Data;
 using NewEra_Cash___Carry.DTOs.order;
 using NewEra_Cash___Carry.DTOs.order.NewEra_Cash___Carry.DTOs.order;
 using NewEra_Cash___Carry.Models;
+using Serilog;
 
 namespace NewEra_Cash___Carry.Controllers
 {
@@ -25,142 +26,188 @@ namespace NewEra_Cash___Carry.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<OrderDto>>> GetOrders()
         {
-            var orders = await _context.Orders
-                .Include(o => o.User)
-                .Include(o => o.OrderItems)
-                    .ThenInclude(oi => oi.Product)
-                .ToListAsync();
-
-            var orderDtos = orders.Select(o => new OrderDto
+            try
             {
-                Id = o.Id,
-                UserId = o.UserId,
-                UserName = o.User.PhoneNumber,
-                OrderDate = o.OrderDate,
-                TotalAmount = o.TotalAmount,
-                Status = o.Status,
-                PaymentStatus = o.PaymentStatus,
-                PaymentIntentId = o.PaymentIntentId,
-                OrderItems = o.OrderItems.Select(oi => new OrderItemDto
-                {
-                    ProductId = oi.ProductId,
-                    ProductName = oi.Product.Name,
-                    Quantity = oi.Quantity,
-                    Price = oi.Price
-                }).ToList()
-            }).ToList();
+                var orders = await _context.Orders
+                    .Include(o => o.User)
+                    .Include(o => o.OrderItems)
+                        .ThenInclude(oi => oi.Product)
+                    .ToListAsync();
 
-            return Ok(orderDtos);
+                var orderDtos = orders.Select(o => new OrderDto
+                {
+                    Id = o.Id,
+                    UserId = o.UserId,
+                    UserName = o.User.PhoneNumber,
+                    OrderDate = o.OrderDate,
+                    TotalAmount = o.TotalAmount,
+                    Status = o.Status,
+                    PaymentStatus = o.PaymentStatus,
+                    PaymentIntentId = o.PaymentIntentId,
+                    OrderItems = o.OrderItems.Select(oi => new OrderItemDto
+                    {
+                        ProductId = oi.ProductId,
+                        ProductName = oi.Product.Name,
+                        Quantity = oi.Quantity,
+                        Price = oi.Price
+                    }).ToList()
+                }).ToList();
+
+                Log.Information("Fetched all orders successfully.");
+                return Ok(orderDtos);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error fetching orders.");
+                throw;
+            }
         }
 
         // Get an order by ID
         [HttpGet("{id}")]
         public async Task<ActionResult<OrderDto>> GetOrderById(int id)
         {
-            var order = await _context.Orders
-                .Include(o => o.User)
-                .Include(o => o.OrderItems)
-                    .ThenInclude(oi => oi.Product)
-                .FirstOrDefaultAsync(o => o.Id == id);
-
-            if (order == null)
+            try
             {
-                return NotFound(new { message = "Order not found." });
-            }
+                var order = await _context.Orders
+                    .Include(o => o.User)
+                    .Include(o => o.OrderItems)
+                        .ThenInclude(oi => oi.Product)
+                    .FirstOrDefaultAsync(o => o.Id == id);
 
-            var orderDto = new OrderDto
-            {
-                Id = order.Id,
-                UserId = order.UserId,
-                UserName = order.User.PhoneNumber,
-                OrderDate = order.OrderDate,
-                TotalAmount = order.TotalAmount,
-                Status = order.Status,
-                PaymentStatus = order.PaymentStatus,
-                PaymentIntentId = order.PaymentIntentId,
-                OrderItems = order.OrderItems.Select(oi => new OrderItemDto
+                if (order == null)
                 {
-                    ProductId = oi.ProductId,
-                    ProductName = oi.Product.Name,
-                    Quantity = oi.Quantity,
-                    Price = oi.Price
-                }).ToList()
-            };
+                    Log.Warning("Order with ID {OrderId} not found.", id);
+                    return NotFound(new { message = "Order not found." });
+                }
 
-            return Ok(orderDto);
+                var orderDto = new OrderDto
+                {
+                    Id = order.Id,
+                    UserId = order.UserId,
+                    UserName = order.User.PhoneNumber,
+                    OrderDate = order.OrderDate,
+                    TotalAmount = order.TotalAmount,
+                    Status = order.Status,
+                    PaymentStatus = order.PaymentStatus,
+                    PaymentIntentId = order.PaymentIntentId,
+                    OrderItems = order.OrderItems.Select(oi => new OrderItemDto
+                    {
+                        ProductId = oi.ProductId,
+                        ProductName = oi.Product.Name,
+                        Quantity = oi.Quantity,
+                        Price = oi.Price
+                    }).ToList()
+                };
+
+                Log.Information("Order with ID {OrderId} retrieved successfully.", id);
+                return Ok(orderDto);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error retrieving order with ID {OrderId}.", id);
+                throw;
+            }
         }
 
-        // Create an order
         // Create an order
         [HttpPost]
         [Authorize]
         public async Task<IActionResult> CreateOrder([FromBody] OrderCreateDto orderDto)
         {
-            var user = await _context.Users.FindAsync(orderDto.UserId);
-            if (user == null)
+            if (orderDto == null || !orderDto.OrderItems.Any())
             {
-                return BadRequest(new { message = "Invalid user ID." });
+                Log.Warning("Invalid order creation attempt with empty body or items.");
+                return BadRequest(new { message = "Order details cannot be empty." });
             }
 
-            var order = new Order
+            try
             {
-                UserId = orderDto.UserId,
-                TotalAmount = 0,
-                Status = "Pending",
-                PaymentStatus = "Pending",
-                OrderItems = new List<OrderItem>()
-            };
-
-            foreach (var itemDto in orderDto.OrderItems)
-            {
-                var product = await _context.Products.FindAsync(itemDto.ProductId);
-                if (product == null)
+                var user = await _context.Users.FindAsync(orderDto.UserId);
+                if (user == null)
                 {
-                    return BadRequest(new { message = $"Product with ID {itemDto.ProductId} not found." });
+                    Log.Warning("Invalid user ID {UserId} provided for order creation.", orderDto.UserId);
+                    return BadRequest(new { message = "Invalid user ID." });
                 }
 
-                // Check if there is enough stock
-                if (product.Stock < itemDto.Quantity)
+                var order = new Order
                 {
-                    return BadRequest(new { message = $"Not enough stock for product {product.Name}. Available stock: {product.Stock}" });
-                }
-
-                // Deduct stock
-                product.Stock -= itemDto.Quantity;
-
-                var orderItem = new OrderItem
-                {
-                    ProductId = product.ProductId,
-                    Quantity = itemDto.Quantity,
-                    Price = product.Price
+                    UserId = orderDto.UserId,
+                    TotalAmount = 0,
+                    Status = "Pending",
+                    PaymentStatus = "Pending",
+                    OrderItems = new List<OrderItem>()
                 };
 
-                order.OrderItems.Add(orderItem);
-                order.TotalAmount += product.Price * itemDto.Quantity;
-            }
-
-            _context.Orders.Add(order);
-            await _context.SaveChangesAsync();
-
-            var orderDtoResponse = new OrderDto
-            {
-                Id = order.Id,
-                UserId = order.UserId,
-                UserName = user.PhoneNumber,
-                OrderDate = order.OrderDate,
-                TotalAmount = order.TotalAmount,
-                Status = order.Status,
-                PaymentStatus = order.PaymentStatus,
-                OrderItems = order.OrderItems.Select(oi => new OrderItemDto
+                foreach (var itemDto in orderDto.OrderItems)
                 {
-                    ProductId = oi.ProductId,
-                    ProductName = oi.Product.Name,
-                    Quantity = oi.Quantity,
-                    Price = oi.Price
-                }).ToList()
-            };
+                    var product = await _context.Products.FindAsync(itemDto.ProductId);
+                    if (product == null)
+                    {
+                        Log.Warning("Product with ID {ProductId} not found.", itemDto.ProductId);
+                        return BadRequest(new { message = $"Product with ID {itemDto.ProductId} not found." });
+                    }
 
-            return CreatedAtAction(nameof(GetOrderById), new { id = order.Id }, orderDtoResponse);
+                    if (product.Stock < itemDto.Quantity)
+                    {
+                        Log.Warning("Insufficient stock for product {ProductName}. Available: {Stock}, Requested: {Requested}.", product.Name, product.Stock, itemDto.Quantity);
+                        return BadRequest(new { message = $"Not enough stock for product {product.Name}. Available stock: {product.Stock}" });
+                    }
+
+                    if (itemDto.Quantity <= 0)
+                    {
+                        Log.Warning("Invalid quantity {Quantity} for product ID {ProductId}.", itemDto.Quantity, product.ProductId);
+                        return BadRequest(new { message = $"Quantity must be greater than 0 for product {product.Name}." });
+                    }
+
+                    product.Stock -= itemDto.Quantity;
+
+                    var orderItem = new OrderItem
+                    {
+                        ProductId = product.ProductId,
+                        Quantity = itemDto.Quantity,
+                        Price = product.Price
+                    };
+
+                    order.OrderItems.Add(orderItem);
+                    order.TotalAmount += product.Price * itemDto.Quantity;
+                }
+
+                if (order.TotalAmount <= 0)
+                {
+                    Log.Warning("Attempt to create an order with a total amount of 0 for user ID {UserId}.", order.UserId);
+                    return BadRequest(new { message = "Order total amount must be greater than 0." });
+                }
+
+                _context.Orders.Add(order);
+                await _context.SaveChangesAsync();
+
+                var orderDtoResponse = new OrderDto
+                {
+                    Id = order.Id,
+                    UserId = order.UserId,
+                    UserName = user.PhoneNumber,
+                    OrderDate = order.OrderDate,
+                    TotalAmount = order.TotalAmount,
+                    Status = order.Status,
+                    PaymentStatus = order.PaymentStatus,
+                    OrderItems = order.OrderItems.Select(oi => new OrderItemDto
+                    {
+                        ProductId = oi.ProductId,
+                        ProductName = oi.Product.Name,
+                        Quantity = oi.Quantity,
+                        Price = oi.Price
+                    }).ToList()
+                };
+
+                Log.Information("Order created successfully for user ID {UserId} with order ID {OrderId}.", order.UserId, order.Id);
+                return CreatedAtAction(nameof(GetOrderById), new { id = order.Id }, orderDtoResponse);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error creating order for user ID {UserId}.", orderDto.UserId);
+                throw;
+            }
         }
 
 
@@ -169,16 +216,26 @@ namespace NewEra_Cash___Carry.Controllers
         [HttpPut("{id}/status")]
         public async Task<IActionResult> UpdateOrderStatus(int id, [FromBody] string status)
         {
-            var order = await _context.Orders.FindAsync(id);
-            if (order == null)
+            try
             {
-                return NotFound(new { message = "Order not found." });
+                var order = await _context.Orders.FindAsync(id);
+                if (order == null)
+                {
+                    Log.Warning("Order with ID {OrderId} not found for status update.", id);
+                    return NotFound(new { message = "Order not found." });
+                }
+
+                order.Status = status;
+                await _context.SaveChangesAsync();
+
+                Log.Information("Order status updated successfully for order ID {OrderId}.", id);
+                return Ok(new { message = "Order status updated successfully." });
             }
-
-            order.Status = status;
-            await _context.SaveChangesAsync();
-
-            return Ok(new { message = "Order status updated successfully." });
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error updating status for order ID {OrderId}.", id);
+                throw;
+            }
         }
 
         // Delete an order (Admin only)
@@ -186,16 +243,26 @@ namespace NewEra_Cash___Carry.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteOrder(int id)
         {
-            var order = await _context.Orders.FindAsync(id);
-            if (order == null)
+            try
             {
-                return NotFound(new { message = "Order not found." });
+                var order = await _context.Orders.FindAsync(id);
+                if (order == null)
+                {
+                    Log.Warning("Order with ID {OrderId} not found for deletion.", id);
+                    return NotFound(new { message = "Order not found." });
+                }
+
+                _context.Orders.Remove(order);
+                await _context.SaveChangesAsync();
+
+                Log.Information("Order with ID {OrderId} deleted successfully.", id);
+                return NoContent();
             }
-
-            _context.Orders.Remove(order);
-            await _context.SaveChangesAsync();
-
-            return NoContent();
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error deleting order with ID {OrderId}.", id);
+                throw;
+            }
         }
     }
 }
