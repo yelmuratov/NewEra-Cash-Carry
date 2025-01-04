@@ -7,6 +7,9 @@ using NewEra_Cash___Carry.Models;
 
 namespace NewEra_Cash___Carry.Controllers
 {
+    /// <summary>
+    /// Controller for managing roles and role assignments.
+    /// </summary>
     [ApiVersion("1.0")]
     [Route("api/v{version:apiVersion}/[controller]")]
     [ApiController]
@@ -15,19 +18,30 @@ namespace NewEra_Cash___Carry.Controllers
     {
         private readonly RetailOrderingSystemDbContext _context;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="RoleController"/> class.
+        /// </summary>
+        /// <param name="context">The database context.</param>
         public RoleController(RetailOrderingSystemDbContext context)
         {
             _context = context;
         }
 
-        // Get all roles
+        /// <summary>
+        /// Retrieves all roles.
+        /// </summary>
+        /// <returns>A list of roles.</returns>
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Role>>> GetRoles()
         {
             return await _context.Roles.ToListAsync();
         }
 
-        // Get a role by ID
+        /// <summary>
+        /// Retrieves a specific role by ID.
+        /// </summary>
+        /// <param name="id">The ID of the role.</param>
+        /// <returns>The requested role.</returns>
         [HttpGet("{id}")]
         public async Task<ActionResult<Role>> GetRoleById(int id)
         {
@@ -41,7 +55,11 @@ namespace NewEra_Cash___Carry.Controllers
             return Ok(role);
         }
 
-        // Create a new role
+        /// <summary>
+        /// Creates a new role.
+        /// </summary>
+        /// <param name="roleDto">The role details.</param>
+        /// <returns>The created role.</returns>
         [HttpPost]
         public async Task<ActionResult<Role>> CreateRole([FromBody] RoleDto roleDto)
         {
@@ -61,7 +79,12 @@ namespace NewEra_Cash___Carry.Controllers
             return CreatedAtAction(nameof(GetRoleById), new { id = role.Id }, role);
         }
 
-        // Update a role
+        /// <summary>
+        /// Updates an existing role.
+        /// </summary>
+        /// <param name="id">The ID of the role to update.</param>
+        /// <param name="roleDto">The updated role details.</param>
+        /// <returns>No content.</returns>
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateRole(int id, [FromBody] RoleDto roleDto)
         {
@@ -78,7 +101,11 @@ namespace NewEra_Cash___Carry.Controllers
             return NoContent();
         }
 
-        // Delete a role
+        /// <summary>
+        /// Deletes a specific role by ID.
+        /// </summary>
+        /// <param name="id">The ID of the role to delete.</param>
+        /// <returns>No content.</returns>
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteRole(int id)
         {
@@ -95,7 +122,12 @@ namespace NewEra_Cash___Carry.Controllers
             return NoContent();
         }
 
-        // Assign a role to a user
+        /// <summary>
+        /// Assigns a role to a user.
+        /// </summary>
+        /// <param name="userId">The ID of the user.</param>
+        /// <param name="roleId">The ID of the role to assign.</param>
+        /// <returns>Success message.</returns>
         [HttpPost("assign-role")]
         public async Task<IActionResult> AssignRoleToUser(int userId, int roleId)
         {
@@ -125,7 +157,12 @@ namespace NewEra_Cash___Carry.Controllers
             return Ok(new { message = "Role assigned to user successfully." });
         }
 
-        // Remove a role from a user
+        /// <summary>
+        /// Removes a role from a user.
+        /// </summary>
+        /// <param name="userId">The ID of the user.</param>
+        /// <param name="roleId">The ID of the role to remove.</param>
+        /// <returns>Success message.</returns>
         [HttpPost("remove-role")]
         public async Task<IActionResult> RemoveRoleFromUser(int userId, int roleId)
         {

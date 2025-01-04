@@ -6,6 +6,9 @@ using NewEra_Cash___Carry.DTOs.user;
 
 namespace NewEra_Cash___Carry.Controllers
 {
+    /// <summary>
+    /// Controller for managing user accounts and their roles.
+    /// </summary>
     [ApiVersion("1.0")]
     [Route("api/v{version:apiVersion}/[controller]")]
     [ApiController]
@@ -14,11 +17,19 @@ namespace NewEra_Cash___Carry.Controllers
     {
         private readonly RetailOrderingSystemDbContext _context;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="UserController"/> class.
+        /// </summary>
+        /// <param name="context">The database context.</param>
         public UserController(RetailOrderingSystemDbContext context)
         {
             _context = context;
         }
 
+        /// <summary>
+        /// Retrieves all users along with their roles.
+        /// </summary>
+        /// <returns>A list of users with their roles.</returns>
         [HttpGet]
         public async Task<ActionResult<IEnumerable<UserDto>>> GetUsers()
         {
@@ -37,6 +48,11 @@ namespace NewEra_Cash___Carry.Controllers
             return Ok(userDtos);
         }
 
+        /// <summary>
+        /// Retrieves a specific user by ID along with their roles.
+        /// </summary>
+        /// <param name="id">The ID of the user.</param>
+        /// <returns>The requested user details.</returns>
         [HttpGet("{id}")]
         public async Task<ActionResult<UserDto>> GetUserById(int id)
         {
@@ -60,6 +76,12 @@ namespace NewEra_Cash___Carry.Controllers
             return Ok(userDto);
         }
 
+        /// <summary>
+        /// Updates the details of an existing user.
+        /// </summary>
+        /// <param name="id">The ID of the user to update.</param>
+        /// <param name="userDto">The updated user details.</param>
+        /// <returns>A success message if the update is successful.</returns>
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateUser(int id, [FromBody] UserDto userDto)
         {
@@ -77,6 +99,11 @@ namespace NewEra_Cash___Carry.Controllers
             return Ok(new { message = "User updated successfully." });
         }
 
+        /// <summary>
+        /// Deletes a specific user by ID.
+        /// </summary>
+        /// <param name="id">The ID of the user to delete.</param>
+        /// <returns>A success message if the deletion is successful.</returns>
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteUser(int id)
         {

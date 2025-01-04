@@ -27,6 +27,11 @@ namespace NewEra_Cash___Carry.Controllers
             _authSettings = authSettings.Value;
         }
 
+        /// <summary>
+        /// Registers a new user.
+        /// </summary>
+        /// <param name="userDto">The user registration details.</param>
+        /// <returns>A success message if registration is successful.</returns>
         [AllowAnonymous]
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] UserRegisterDto userDto)
@@ -59,6 +64,11 @@ namespace NewEra_Cash___Carry.Controllers
             return Ok(new { message = "User registered successfully." });
         }
 
+        /// <summary>
+        /// Logs in a user and generates a JWT token.
+        /// </summary>
+        /// <param name="userDto">The user login details.</param>
+        /// <returns>A JWT token if login is successful.</returns>
         [AllowAnonymous]
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] UserLoginDto userDto)
@@ -74,6 +84,10 @@ namespace NewEra_Cash___Carry.Controllers
             return Ok(new { Token = token });
         }
 
+        /// <summary>
+        /// Logs out the current user by blacklisting the token.
+        /// </summary>
+        /// <returns>A success message if logout is successful.</returns>
         [HttpPost("logout")]
         public async Task<IActionResult> Logout()
         {
@@ -97,6 +111,10 @@ namespace NewEra_Cash___Carry.Controllers
             return Ok(new { message = "Successfully logged out." });
         }
 
+        /// <summary>
+        /// Retrieves the currently authenticated user's details.
+        /// </summary>
+        /// <returns>The current user's details.</returns>
         [HttpGet("me")]
         public async Task<ActionResult<UserDto>> GetCurrentUser()
         {
@@ -126,6 +144,11 @@ namespace NewEra_Cash___Carry.Controllers
             return Ok(userDto);
         }
 
+        /// <summary>
+        /// Generates a JWT token for the specified user.
+        /// </summary>
+        /// <param name="user">The user for whom the token is generated.</param>
+        /// <returns>A JWT token.</returns>
         private string GenerateJwtToken(User user)
         {
             var tokenHandler = new JwtSecurityTokenHandler();

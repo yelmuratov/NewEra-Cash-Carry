@@ -7,26 +7,40 @@ using NewEra_Cash___Carry.Models;
 
 namespace NewEra_Cash___Carry.Controllers
 {
-
+    /// <summary>
+    /// Controller for managing categories in the system.
+    /// </summary>
     [ApiVersion("1.0")]
     [Route("api/v{version:apiVersion}/[controller]")]
     [ApiController]
     public class CategoryController : ControllerBase
     {
         private readonly RetailOrderingSystemDbContext _context;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CategoryController"/> class.
+        /// </summary>
+        /// <param name="context">Database context for interacting with categories.</param>
         public CategoryController(RetailOrderingSystemDbContext context)
         {
             _context = context;
         }
 
-        // Get all categories - Accessible to any user
+        /// <summary>
+        /// Retrieves all categories.
+        /// </summary>
+        /// <returns>A list of all categories.</returns>
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Category>>> GetCategories()
         {
             return await _context.Categories.ToListAsync();
         }
 
-        // Get category by ID - Accessible to any authenticated user
+        /// <summary>
+        /// Retrieves a specific category by its ID.
+        /// </summary>
+        /// <param name="id">The ID of the category to retrieve.</param>
+        /// <returns>The requested category.</returns>
         [Authorize]
         [HttpGet("{id}")]
         public async Task<ActionResult<Category>> GetCategoryById(int id)
@@ -35,13 +49,17 @@ namespace NewEra_Cash___Carry.Controllers
 
             if (category == null)
             {
-                return NotFound();
+                return NotFound(new { message = "Category not found." });
             }
 
             return Ok(category);
         }
 
-        // Post category - Only accessible to Admins
+        /// <summary>
+        /// Creates a new category.
+        /// </summary>
+        /// <param name="categoryDto">The category details to create.</param>
+        /// <returns>The created category.</returns>
         [HttpPost]
         [Authorize(Roles = "Admin")]
         public async Task<ActionResult<Category>> PostCategory([FromBody] CategoryPostDto categoryDto)
@@ -63,7 +81,12 @@ namespace NewEra_Cash___Carry.Controllers
             return CreatedAtAction(nameof(GetCategoryById), new { id = category.CategoryId }, category);
         }
 
-        // Update category - Only accessible to Admins
+        /// <summary>
+        /// Updates an existing category.
+        /// </summary>
+        /// <param name="id">The ID of the category to update.</param>
+        /// <param name="categoryDto">The updated category details.</param>
+        /// <returns>A <see cref="NoContentResult"/> if the update is successful.</returns>
         [HttpPut("{id}")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> UpdateCategory(int id, [FromBody] CategoryUpdateDto categoryDto)
@@ -71,7 +94,7 @@ namespace NewEra_Cash___Carry.Controllers
             var category = await _context.Categories.FindAsync(id);
             if (category == null)
             {
-                return NotFound();
+                return NotFound(new { message = "Category not found." });
             }
 
             category.Name = categoryDto.Name;
@@ -82,7 +105,11 @@ namespace NewEra_Cash___Carry.Controllers
             return NoContent();
         }
 
-        // Delete category - Only accessible to Admins
+        /// <summary>
+        /// Deletes a category.
+        /// </summary>
+        /// <param name="id">The ID of the category to delete.</param>
+        /// <returns>A <see cref="NoContentResult"/> if the deletion is successful.</returns>
         [HttpDelete("{id}")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteCategory(int id)
@@ -91,7 +118,7 @@ namespace NewEra_Cash___Carry.Controllers
 
             if (category == null)
             {
-                return NotFound();
+                return NotFound(new { message = "Category not found." });
             }
 
             _context.Categories.Remove(category);

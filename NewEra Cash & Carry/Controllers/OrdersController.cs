@@ -6,9 +6,15 @@ using NewEra_Cash___Carry.DTOs.order;
 using NewEra_Cash___Carry.DTOs.order.NewEra_Cash___Carry.DTOs.order;
 using NewEra_Cash___Carry.Models;
 using Serilog;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace NewEra_Cash___Carry.Controllers
 {
+    /// <summary>
+    /// Controller for managing orders in the system.
+    /// </summary>
     [ApiVersion("1.0")]
     [Route("api/v{version:apiVersion}/[controller]")]
     [ApiController]
@@ -17,12 +23,19 @@ namespace NewEra_Cash___Carry.Controllers
     {
         private readonly RetailOrderingSystemDbContext _context;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="OrderController"/> class.
+        /// </summary>
+        /// <param name="context">Database context for interacting with orders.</param>
         public OrderController(RetailOrderingSystemDbContext context)
         {
             _context = context;
         }
 
-        // Get all orders (Admin only)
+        /// <summary>
+        /// Retrieves all orders. (Admin only)
+        /// </summary>
+        /// <returns>A list of all orders with their details.</returns>
         [Authorize(Roles = "Admin")]
         [HttpGet]
         public async Task<ActionResult<IEnumerable<OrderDto>>> GetOrders()
@@ -64,7 +77,11 @@ namespace NewEra_Cash___Carry.Controllers
             }
         }
 
-        // Get an order by ID
+        /// <summary>
+        /// Retrieves a specific order by ID.
+        /// </summary>
+        /// <param name="id">The ID of the order to retrieve.</param>
+        /// <returns>The requested order details.</returns>
         [HttpGet("{id}")]
         public async Task<ActionResult<OrderDto>> GetOrderById(int id)
         {
@@ -111,7 +128,11 @@ namespace NewEra_Cash___Carry.Controllers
             }
         }
 
-        // Create an order
+        /// <summary>
+        /// Creates a new order.
+        /// </summary>
+        /// <param name="orderDto">The details of the order to create.</param>
+        /// <returns>The created order details.</returns>
         [HttpPost]
         [Authorize]
         public async Task<IActionResult> CreateOrder([FromBody] OrderCreateDto orderDto)
@@ -153,12 +174,6 @@ namespace NewEra_Cash___Carry.Controllers
                     {
                         Log.Warning("Insufficient stock for product {ProductName}. Available: {Stock}, Requested: {Requested}.", product.Name, product.Stock, itemDto.Quantity);
                         return BadRequest(new { message = $"Not enough stock for product {product.Name}. Available stock: {product.Stock}" });
-                    }
-
-                    if (itemDto.Quantity <= 0)
-                    {
-                        Log.Warning("Invalid quantity {Quantity} for product ID {ProductId}.", itemDto.Quantity, product.ProductId);
-                        return BadRequest(new { message = $"Quantity must be greater than 0 for product {product.Name}." });
                     }
 
                     product.Stock -= itemDto.Quantity;
@@ -211,8 +226,12 @@ namespace NewEra_Cash___Carry.Controllers
             }
         }
 
-
-        // Update order status (Admin only)
+        /// <summary>
+        /// Updates the status of an order. (Admin only)
+        /// </summary>
+        /// <param name="id">The ID of the order to update.</param>
+        /// <param name="status">The new status for the order.</param>
+        /// <returns>A success message if the update is successful.</returns>
         [Authorize(Roles = "Admin")]
         [HttpPut("{id}/status")]
         public async Task<IActionResult> UpdateOrderStatus(int id, [FromBody] string status)
@@ -239,7 +258,11 @@ namespace NewEra_Cash___Carry.Controllers
             }
         }
 
-        // Delete an order (Admin only)
+        /// <summary>
+        /// Deletes an order. (Admin only)
+        /// </summary>
+        /// <param name="id">The ID of the order to delete.</param>
+        /// <returns>A <see cref="NoContentResult"/> if the deletion is successful.</returns>
         [Authorize(Roles = "Admin")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteOrder(int id)
