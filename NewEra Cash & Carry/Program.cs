@@ -1,15 +1,22 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Http.Features;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using NewEra_Cash___Carry.Data;
 using NewEra_Cash___Carry.Helpers;
 using NewEra_Cash___Carry.Middlewares;
 using System.Text;
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Add Serilog configuration
+Log.Logger = new LoggerConfiguration()
+.WriteTo.Console()
+.WriteTo.File("logs/log-.txt", rollingInterval:
+RollingInterval.Day)
+.CreateLogger();
+builder.Host.UseSerilog();
 
 // Add services to the container.
 builder.Services.AddControllers();
@@ -84,6 +91,10 @@ app.UseHttpsRedirection();
 
 //Middlewares
 app.UseMiddleware<TokenBlacklistMiddleware>();
+app.UseMiddleware<ErrorHandlerMiddleware>();
+
+//Serialog
+app.UseSerilogRequestLogging();
 
 // Add authentication and authorization middleware
 app.UseAuthentication();

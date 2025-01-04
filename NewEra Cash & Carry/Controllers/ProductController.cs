@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using NewEra_Cash___Carry.Data;
 using NewEra_Cash___Carry.DTOs.product;
 using NewEra_Cash___Carry.Models;
+using Serilog;
 
 namespace NewEra_Cash___Carry.Controllers
 {
@@ -22,28 +23,36 @@ namespace NewEra_Cash___Carry.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<ProductDto>>> GetProducts()
         {
-            var products = await _context.Products
-                .Include(p => p.Category)
-                .Include(p => p.ProductImages)
-                .Select(p => new ProductDto
-                {
-                    ProductId = p.ProductId,
-                    Name = p.Name,
-                    Description = p.Description,
-                    Price = p.Price,
-                    Stock = p.Stock,
-                    CategoryName = p.Category.Name,
-                    ImageUrls = p.ProductImages.Select(pi => pi.ImageUrl).ToList()
-                })
-                .ToListAsync();
+            try
+            {
+                var products = await _context.Products
+                    .Include(p => p.Category)
+                    .Include(p => p.ProductImages)
+                    .Select(p => new ProductDto
+                    {
+                        ProductId = p.ProductId,
+                        Name = p.Name,
+                        Description = p.Description,
+                        Price = p.Price,
+                        Stock = p.Stock,
+                        CategoryName = p.Category.Name,
+                        ImageUrls = p.ProductImages.Select(pi => pi.ImageUrl).ToList()
+                    })
+                    .ToListAsync();
 
-            return Ok(products);
+                Log.Information("Fetched all products successfully.");
+                return Ok(products);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error fetching products.");
+                throw;
+            }
         }
 
-
-        // GET: api/Products/search
+        // Search products with filters
         [HttpGet("search")]
-        public async Task<ActionResult<IEnumerable<Product>>> SearchProducts(
+        public async Task<ActionResult> SearchProducts(
             [FromQuery] string? name,
             [FromQuery] int? categoryId,
             [FromQuery] decimal? minPrice,
@@ -58,78 +67,77 @@ namespace NewEra_Cash___Carry.Controllers
                 return BadRequest(new { message = "Page and pageSize must be greater than 0." });
             }
 
-            var query = _context.Products.AsQueryable();
-
-            // Filter by name
-            if (!string.IsNullOrEmpty(name))
+            try
             {
-                query = query.Where(p => p.Name.Contains(name));
+                var query = _context.Products.AsQueryable();
+
+                // Apply filters
+                if (!string.IsNullOrEmpty(name)) query = query.Where(p => p.Name.Contains(name));
+                if (categoryId.HasValue) query = query.Where(p => p.CategoryId == categoryId);
+                if (minPrice.HasValue) query = query.Where(p => p.Price >= minPrice.Value);
+                if (maxPrice.HasValue) query = query.Where(p => p.Price <= maxPrice.Value);
+
+                // Apply sorting
+                query = sortBy?.ToLower() switch
+                {
+                    "price" => ascending ? query.OrderBy(p => p.Price) : query.OrderByDescending(p => p.Price),
+                    "name" => ascending ? query.OrderBy(p => p.Name) : query.OrderByDescending(p => p.Name),
+                    _ => query
+                };
+
+                // Paginate and fetch results
+                var totalItems = await query.CountAsync();
+                var products = await query
+                    .Include(p => p.Category)
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+
+                var response = new
+                {
+                    Page = page,
+                    PageSize = pageSize,
+                    TotalItems = totalItems,
+                    TotalPages = (int)Math.Ceiling(totalItems / (double)pageSize),
+                    Data = products
+                };
+
+                Log.Information("Search products completed successfully.");
+                return Ok(response);
             }
-
-            // Filter by category
-            if (categoryId.HasValue)
+            catch (Exception ex)
             {
-                query = query.Where(p => p.CategoryId == categoryId);
+                Log.Error(ex, "Error during product search.");
+                throw;
             }
-
-            // Filter by price range
-            if (minPrice.HasValue)
-            {
-                query = query.Where(p => p.Price >= minPrice.Value);
-            }
-
-            if (maxPrice.HasValue)
-            {
-                query = query.Where(p => p.Price <= maxPrice.Value);
-            }
-
-            // Apply sorting
-            query = sortBy?.ToLower() switch
-            {
-                "price" => ascending ? query.OrderBy(p => p.Price) : query.OrderByDescending(p => p.Price),
-                "name" => ascending ? query.OrderBy(p => p.Name) : query.OrderByDescending(p => p.Name),
-                _ => query // Default: No sorting
-            };
-
-            // Calculate total count before pagination
-            var totalItems = await query.CountAsync();
-
-            // Apply pagination
-            var products = await query
-                .Include(p => p.Category)
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
-                .ToListAsync();
-
-            // Return paginated results
-            var response = new
-            {
-                Page = page,
-                PageSize = pageSize,
-                TotalItems = totalItems,
-                TotalPages = (int)Math.Ceiling(totalItems / (double)pageSize),
-                Data = products
-            };
-
-            return Ok(response);
         }
 
-        // Get product by ID - Accessible to any user
+        // Get product by ID
         [Authorize]
         [HttpGet("{id}")]
         public async Task<ActionResult<Product>> GetProduct(int id)
         {
-            var product = await _context.Products
-                .Include(p => p.Category)
-                .Include(p => p.ProductImages) // Include images
-                .FirstOrDefaultAsync(p => p.ProductId == id);
-
-            if (product == null)
+            try
             {
-                return NotFound(new { message = "Product not found." });
-            }
+                var product = await _context.Products
+                    .Include(p => p.Category)
+                    .Include(p => p.ProductImages)
+                    .FirstOrDefaultAsync(p => p.ProductId == id);
 
-            return Ok(product);
+                if (product == null)
+                {
+                    Log.Warning("Product with ID {ProductId} not found.", id);
+                    return NotFound(new { message = "Product not found." });
+                }
+
+                Log.Information("Product with ID {ProductId} retrieved successfully.", id);
+                return Ok(product);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error retrieving product with ID {ProductId}.", id);
+                throw;
+            }
         }
 
         // Create a new product - Only accessible to Admins
@@ -137,9 +145,29 @@ namespace NewEra_Cash___Carry.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<ActionResult<Product>> PostProduct([FromBody] ProductPostDto productDto)
         {
-            // Check if the associated category exists
+            // Check if the body is empty or null
+            if (productDto == null)
+            {
+                Log.Warning("Empty body provided for product creation.");
+                return BadRequest(new { message = "Request body cannot be null or empty." });
+            }
+
+            // Validate product details
+            if (string.IsNullOrWhiteSpace(productDto.Name))
+            {
+                Log.Warning("Product creation failed due to missing name.");
+                return BadRequest(new { message = "Product name is required." });
+            }
+
+            if (productDto.Price <= 0)
+            {
+                Log.Warning("Product creation failed due to invalid price.");
+                return BadRequest(new { message = "Product price must be greater than zero." });
+            }
+
             if (!await _context.Categories.AnyAsync(c => c.CategoryId == productDto.CategoryId))
             {
+                Log.Warning("Product creation failed due to invalid CategoryId: {CategoryId}", productDto.CategoryId);
                 return BadRequest(new { message = "Invalid CategoryId. The category does not exist." });
             }
 
@@ -152,25 +180,30 @@ namespace NewEra_Cash___Carry.Controllers
                 CategoryId = productDto.CategoryId
             };
 
-            _context.Products.Add(product);
-            await _context.SaveChangesAsync();
+            try
+            {
+                _context.Products.Add(product);
+                await _context.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(GetProduct), new { id = product.ProductId }, product);
+                Log.Information("Product {ProductName} created with ID {ProductId}.", product.Name, product.ProductId);
+                return CreatedAtAction(nameof(GetProduct), new { id = product.ProductId }, product);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error creating product {ProductName}.", productDto.Name);
+                throw;
+            }
         }
 
-        // Update a product - Only accessible to Admins
+
+        // Update product
         [HttpPut("{id}")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> UpdateProduct(int id, [FromBody] ProductPostDto productDto)
         {
             var product = await _context.Products.FindAsync(id);
+            if (product == null) return NotFound(new { message = "Product not found." });
 
-            if (product == null)
-            {
-                return NotFound();
-            }
-
-            // Check if the associated category exists
             if (!await _context.Categories.AnyAsync(c => c.CategoryId == productDto.CategoryId))
             {
                 return BadRequest(new { message = "Invalid CategoryId. The category does not exist." });
@@ -183,39 +216,48 @@ namespace NewEra_Cash___Carry.Controllers
             product.CategoryId = productDto.CategoryId;
             product.UpdatedAt = DateTime.UtcNow;
 
-            await _context.SaveChangesAsync();
-
-            return NoContent();
+            try
+            {
+                await _context.SaveChangesAsync();
+                Log.Information("Product with ID {ProductId} updated successfully.", id);
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error updating product with ID {ProductId}.", id);
+                throw;
+            }
         }
 
-        // Delete a product - Only accessible to Admins
+        // Delete product
         [HttpDelete("{id}")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteProduct(int id)
         {
             var product = await _context.Products.FindAsync(id);
+            if (product == null) return NotFound(new { message = "Product not found." });
 
-            if (product == null)
+            try
             {
-                return NotFound();
+                _context.Products.Remove(product);
+                await _context.SaveChangesAsync();
+                Log.Information("Product with ID {ProductId} deleted successfully.", id);
+                return NoContent();
             }
-
-            _context.Products.Remove(product);
-            await _context.SaveChangesAsync();
-
-            return NoContent();
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error deleting product with ID {ProductId}.", id);
+                throw;
+            }
         }
 
-        //image upload
+        // Image upload for product
         [HttpPost("{id}/upload-images")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> UploadImages(int id, List<IFormFile> files)
         {
             var product = await _context.Products.FindAsync(id);
-            if (product == null)
-            {
-                return NotFound(new { message = "Product not found." });
-            }
+            if (product == null) return NotFound(new { message = "Product not found." });
 
             if (files == null || files.Count == 0)
             {
@@ -225,10 +267,7 @@ namespace NewEra_Cash___Carry.Controllers
             var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif" };
             var imagePath = Path.Combine("wwwroot", "images");
 
-            if (!Directory.Exists(imagePath))
-            {
-                Directory.CreateDirectory(imagePath);
-            }
+            if (!Directory.Exists(imagePath)) Directory.CreateDirectory(imagePath);
 
             var productImages = new List<ProductImage>();
 
@@ -260,11 +299,18 @@ namespace NewEra_Cash___Carry.Controllers
                 });
             }
 
-            _context.ProductImages.AddRange(productImages);
-            await _context.SaveChangesAsync();
-
-            return Ok(productImages.Select(pi => new { pi.Id, pi.ImageUrl }));
+            try
+            {
+                _context.ProductImages.AddRange(productImages);
+                await _context.SaveChangesAsync();
+                Log.Information("Images uploaded successfully for product ID {ProductId}.", id);
+                return Ok(productImages.Select(pi => new { pi.Id, pi.ImageUrl }));
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error uploading images for product ID {ProductId}.", id);
+                throw;
+            }
         }
-
     }
 }
