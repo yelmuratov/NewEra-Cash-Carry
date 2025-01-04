@@ -14,8 +14,8 @@
             public decimal TotalAmount { get; set; }
             public string Status { get; set; }
             public string PaymentStatus { get; set; }
+            public string? PaymentIntentId { get; set; } // Include Payment Intent ID if needed
             public List<OrderItemDto> OrderItems { get; set; }
         }
     }
-
 }

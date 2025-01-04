@@ -35,11 +35,12 @@ namespace NewEra_Cash___Carry.Controllers
             {
                 Id = o.Id,
                 UserId = o.UserId,
-                UserName = o.User.PhoneNumber, // Adjust based on your User model
+                UserName = o.User.PhoneNumber,
                 OrderDate = o.OrderDate,
                 TotalAmount = o.TotalAmount,
                 Status = o.Status,
                 PaymentStatus = o.PaymentStatus,
+                PaymentIntentId = o.PaymentIntentId,
                 OrderItems = o.OrderItems.Select(oi => new OrderItemDto
                 {
                     ProductId = oi.ProductId,
@@ -75,7 +76,8 @@ namespace NewEra_Cash___Carry.Controllers
                 OrderDate = order.OrderDate,
                 TotalAmount = order.TotalAmount,
                 Status = order.Status,
-                PaymentStatus = order.PaymentStatus, // Include PaymentStatus
+                PaymentStatus = order.PaymentStatus,
+                PaymentIntentId = order.PaymentIntentId,
                 OrderItems = order.OrderItems.Select(oi => new OrderItemDto
                 {
                     ProductId = oi.ProductId,
@@ -88,6 +90,7 @@ namespace NewEra_Cash___Carry.Controllers
             return Ok(orderDto);
         }
 
+        // Create an order
         // Create an order
         [HttpPost]
         [Authorize]
@@ -104,6 +107,7 @@ namespace NewEra_Cash___Carry.Controllers
                 UserId = orderDto.UserId,
                 TotalAmount = 0,
                 Status = "Pending",
+                PaymentStatus = "Pending",
                 OrderItems = new List<OrderItem>()
             };
 
@@ -114,6 +118,15 @@ namespace NewEra_Cash___Carry.Controllers
                 {
                     return BadRequest(new { message = $"Product with ID {itemDto.ProductId} not found." });
                 }
+
+                // Check if there is enough stock
+                if (product.Stock < itemDto.Quantity)
+                {
+                    return BadRequest(new { message = $"Not enough stock for product {product.Name}. Available stock: {product.Stock}" });
+                }
+
+                // Deduct stock
+                product.Stock -= itemDto.Quantity;
 
                 var orderItem = new OrderItem
                 {
@@ -129,7 +142,6 @@ namespace NewEra_Cash___Carry.Controllers
             _context.Orders.Add(order);
             await _context.SaveChangesAsync();
 
-            // Transform to DTO to avoid cycles
             var orderDtoResponse = new OrderDto
             {
                 Id = order.Id,

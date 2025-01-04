@@ -17,7 +17,9 @@ namespace NewEra_Cash___Carry.Models
         public decimal TotalAmount { get; set; }
 
         public string Status { get; set; } = "Pending"; // e.g., Pending, Completed, Cancelled
-        public string PaymentStatus { get; set; } = "Pending";
+        public string PaymentStatus { get; set; } = "Pending"; // e.g., Pending, Paid, Refunded
+
+        public string? PaymentIntentId { get; set; } // Stripe Payment Intent ID
 
         public ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
     }
