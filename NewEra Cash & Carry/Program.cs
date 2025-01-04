@@ -7,23 +7,38 @@ using NewEra_Cash___Carry.Helpers;
 using NewEra_Cash___Carry.Middlewares;
 using System.Text;
 using Serilog;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ApiExplorer;
+using System;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add Serilog configuration
 Log.Logger = new LoggerConfiguration()
-.WriteTo.Console()
-.WriteTo.File("logs/log-.txt", rollingInterval:
-RollingInterval.Day)
-.CreateLogger();
+    .WriteTo.Console()
+    .WriteTo.File("logs/log-.txt", rollingInterval: RollingInterval.Day)
+    .CreateLogger();
 builder.Host.UseSerilog();
 
-// Add services to the container.
+// Add services to the container
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
+
+// Swagger Configuration with API Versioning
 builder.Services.AddSwaggerGen(options =>
 {
-    // Add JWT Authentication to Swagger
+    var provider = builder.Services.BuildServiceProvider().GetRequiredService<IApiVersionDescriptionProvider>();
+
+    foreach (var description in provider.ApiVersionDescriptions)
+    {
+        options.SwaggerDoc(description.GroupName, new OpenApiInfo
+        {
+            Title = $"NewEra Cash & Carry API {description.ApiVersion}",
+            Version = description.ApiVersion.ToString(),
+            Description = description.IsDeprecated ? "This API version is deprecated." : null
+        });
+    }
+
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",
@@ -60,9 +75,25 @@ builder.Services.Configure<AuthSettings>(builder.Configuration.GetSection("AuthS
 // Add JWT Authentication
 var authSettings = builder.Configuration.GetSection("AuthSettings").Get<AuthSettings>();
 
-//Payment integration
+// Payment Integration
 builder.Services.Configure<PaymentSettings>(builder.Configuration.GetSection("PaymentSettings"));
 
+// API Versioning
+builder.Services.AddApiVersioning(options =>
+{
+    options.DefaultApiVersion = new ApiVersion(1, 0); // Default to version 1.0
+    options.AssumeDefaultVersionWhenUnspecified = true; // Use default version if none is specified
+    options.ReportApiVersions = true; // Include version info in response headers
+});
+
+// API Explorer for Versioning
+builder.Services.AddVersionedApiExplorer(options =>
+{
+    options.GroupNameFormat = "'v'VVV"; // Format: v1, v1.0
+    options.SubstituteApiVersionInUrl = true; // Replace {version} in route
+});
+
+// Authentication
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -80,28 +111,37 @@ builder.Services.AddAuthentication(options =>
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(options =>
+    {
+        var provider = app.Services.GetRequiredService<IApiVersionDescriptionProvider>();
+        foreach (var description in provider.ApiVersionDescriptions)
+        {
+            options.SwaggerEndpoint($"/swagger/{description.GroupName}/swagger.json", description.GroupName.ToUpperInvariant());
+        }
+    });
 }
 
 app.UseHttpsRedirection();
 
-//Middlewares
+// Middlewares
 app.UseMiddleware<TokenBlacklistMiddleware>();
 app.UseMiddleware<ErrorHandlerMiddleware>();
 
-//Serialog
+// Serilog
 app.UseSerilogRequestLogging();
 
 // Add authentication and authorization middleware
 app.UseAuthentication();
 app.UseAuthorization();
 
+// Map Controllers
 app.MapControllers();
 
+// Static Files
 app.UseStaticFiles();
 
 app.Run();

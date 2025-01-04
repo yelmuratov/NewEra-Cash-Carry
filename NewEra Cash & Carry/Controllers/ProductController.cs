@@ -8,7 +8,8 @@ using Serilog;
 
 namespace NewEra_Cash___Carry.Controllers
 {
-    [Route("api/[controller]")]
+    [ApiVersion("1.0")]
+    [Route("api/v{version:apiVersion}/[controller]")]
     [ApiController]
     public class ProductController : ControllerBase
     {

@@ -7,7 +7,8 @@ using NewEra_Cash___Carry.Models;
 
 namespace NewEra_Cash___Carry.Controllers
 {
-    [Route("api/[controller]")]
+    [ApiVersion("1.0")]
+    [Route("api/v{version:apiVersion}/[controller]")]
     [ApiController]
     [Authorize(Roles = "Admin")] // Role management is restricted to Admins
     public class RoleController : ControllerBase

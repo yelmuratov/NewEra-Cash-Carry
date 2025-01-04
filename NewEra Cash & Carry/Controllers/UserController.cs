@@ -6,7 +6,8 @@ using NewEra_Cash___Carry.DTOs.user;
 
 namespace NewEra_Cash___Carry.Controllers
 {
-    [Route("api/[controller]")]
+    [ApiVersion("1.0")]
+    [Route("api/v{version:apiVersion}/[controller]")]
     [ApiController]
     [Authorize(Roles = "Admin")]
     public class UserController : ControllerBase
