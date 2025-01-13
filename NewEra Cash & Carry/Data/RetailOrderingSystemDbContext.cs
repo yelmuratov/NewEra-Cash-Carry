@@ -1,5 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using NewEra_Cash___Carry.Models;
+using System.Collections.Generic;
+using BCrypt.Net;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 
 namespace NewEra_Cash___Carry.Data
 {
@@ -16,36 +20,53 @@ namespace NewEra_Cash___Carry.Data
         public DbSet<UserRole> UserRoles { get; set; }
         public DbSet<Order> Orders { get; set; }
         public DbSet<OrderItem> OrderItems { get; set; }
-
         public DbSet<BlacklistedToken> BlacklistedTokens { get; set; }
         public DbSet<ProductImage> ProductImages { get; set; }
 
-
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            // Configure many-to-many relationship between User and Role
+            base.OnModelCreating(modelBuilder);
+
+            // Define composite primary key for UserRole
             modelBuilder.Entity<UserRole>()
                 .HasKey(ur => new { ur.UserId, ur.RoleId });
 
-            modelBuilder.Entity<UserRole>()
-                .HasOne(ur => ur.User)
-                .WithMany(u => u.UserRoles)
-                .HasForeignKey(ur => ur.UserId);
-
-            modelBuilder.Entity<UserRole>()
-                .HasOne(ur => ur.Role)
-                .WithMany(r => r.UserRoles)
-                .HasForeignKey(ur => ur.RoleId);
-
+            // Specify column types for decimal properties
             modelBuilder.Entity<Order>()
-            .HasMany(o => o.OrderItems)
-            .WithOne(oi => oi.Order)
-            .HasForeignKey(oi => oi.OrderId);
+                .Property(o => o.TotalAmount)
+                .HasColumnType("decimal(18, 2)");
+
             modelBuilder.Entity<OrderItem>()
-            .HasOne(oi => oi.Product)
-            .WithMany()
-            .HasForeignKey(oi => oi.ProductId);
-            base.OnModelCreating(modelBuilder);
+                .Property(oi => oi.Price)
+                .HasColumnType("decimal(18, 2)");
+
+            // Seed roles
+            modelBuilder.Entity<Role>().HasData(
+                new Role { Id = 1, Name = "Admin" },
+                new Role { Id = 2, Name = "Customer" }
+            );
+
+            // Hash passwords using Bcrypt
+            var hashedPassword1 = BCrypt.Net.BCrypt.HashPassword("password1");
+            var hashedPassword2 = BCrypt.Net.BCrypt.HashPassword("password2");
+
+            // Seed users
+            modelBuilder.Entity<User>().HasData(
+                new User { Id = 1, PhoneNumber = "1234567890", PasswordHash = hashedPassword1 },
+                new User { Id = 2, PhoneNumber = "0987654321", PasswordHash = hashedPassword2 }
+            );
+
+            // Seed user roles
+            modelBuilder.Entity<UserRole>().HasData(
+                new UserRole { UserId = 1, RoleId = 1 },
+                new UserRole { UserId = 2, RoleId = 2 }
+            );
+        }
+
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        {
+            optionsBuilder.ConfigureWarnings(warnings => warnings.Ignore(RelationalEventId.PendingModelChangesWarning));
         }
     }
 }
+

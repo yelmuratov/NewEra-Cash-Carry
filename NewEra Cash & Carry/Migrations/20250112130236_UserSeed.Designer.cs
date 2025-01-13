@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using NewEra_Cash___Carry.Data;
 
@@ -11,9 +12,11 @@ using NewEra_Cash___Carry.Data;
 namespace NewEra_Cash___Carry.Migrations
 {
     [DbContext(typeof(RetailOrderingSystemDbContext))]
-    partial class RetailOrderingSystemDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250112130236_UserSeed")]
+    partial class UserSeed
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -21,6 +24,41 @@ namespace NewEra_Cash___Carry.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
+
+            modelBuilder.Entity("NewEra_Cash___Carry.DTOs.user.UserDto", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("PhoneNumber")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.PrimitiveCollection<string>("Roles")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("UserDto");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            PhoneNumber = "+998913892033",
+                            Roles = "[\"Admin\"]"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            PhoneNumber = "+998913892034",
+                            Roles = "[\"User\"]"
+                        });
+                });
 
             modelBuilder.Entity("NewEra_Cash___Carry.Models.BlacklistedToken", b =>
                 {
@@ -87,7 +125,7 @@ namespace NewEra_Cash___Carry.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<decimal>("TotalAmount")
-                        .HasColumnType("decimal(18, 2)");
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<int>("UserId")
                         .HasColumnType("int");
@@ -111,7 +149,7 @@ namespace NewEra_Cash___Carry.Migrations
                         .HasColumnType("int");
 
                     b.Property<decimal>("Price")
-                        .HasColumnType("decimal(18, 2)");
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<int>("ProductId")
                         .HasColumnType("int");
@@ -206,18 +244,6 @@ namespace NewEra_Cash___Carry.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Roles");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            Name = "Admin"
-                        },
-                        new
-                        {
-                            Id = 2,
-                            Name = "Customer"
-                        });
                 });
 
             modelBuilder.Entity("NewEra_Cash___Carry.Models.User", b =>
@@ -240,20 +266,6 @@ namespace NewEra_Cash___Carry.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Users");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            PasswordHash = "$2a$11$65sWhs2Kmh/1skJgiRFwuebT8QnYO8DnhaV4mgC0JR04FmV1QOO0O",
-                            PhoneNumber = "+998913892033"
-                        },
-                        new
-                        {
-                            Id = 2,
-                            PasswordHash = "$2a$11$tIS2kfkJGo2gZgQHQNaejOhMrEAszTpUKbgjLbbAUiVZZ3b7WpUAu",
-                            PhoneNumber = "+998913892034"
-                        });
                 });
 
             modelBuilder.Entity("NewEra_Cash___Carry.Models.UserRole", b =>
@@ -269,18 +281,6 @@ namespace NewEra_Cash___Carry.Migrations
                     b.HasIndex("RoleId");
 
                     b.ToTable("UserRoles");
-
-                    b.HasData(
-                        new
-                        {
-                            UserId = 1,
-                            RoleId = 1
-                        },
-                        new
-                        {
-                            UserId = 2,
-                            RoleId = 2
-                        });
                 });
 
             modelBuilder.Entity("NewEra_Cash___Carry.Models.Order", b =>

@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using NewEra_Cash___Carry.Data;
 
@@ -11,9 +12,11 @@ using NewEra_Cash___Carry.Data;
 namespace NewEra_Cash___Carry.Migrations
 {
     [DbContext(typeof(RetailOrderingSystemDbContext))]
-    partial class RetailOrderingSystemDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250112230856_InitialCreate")]
+    partial class InitialCreate
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -245,13 +248,13 @@ namespace NewEra_Cash___Carry.Migrations
                         new
                         {
                             Id = 1,
-                            PasswordHash = "$2a$11$65sWhs2Kmh/1skJgiRFwuebT8QnYO8DnhaV4mgC0JR04FmV1QOO0O",
+                            PasswordHash = "$2a$11$0UvNmXfNEoj9yxUW3BBB.OvNzUaE6LBw09smAC04QVnxWNizBhdeK",
                             PhoneNumber = "+998913892033"
                         },
                         new
                         {
                             Id = 2,
-                            PasswordHash = "$2a$11$tIS2kfkJGo2gZgQHQNaejOhMrEAszTpUKbgjLbbAUiVZZ3b7WpUAu",
+                            PasswordHash = "$2a$11$vmZEl7IOkphbSgUz0tusKOKvks6dfE1jJ6RnE1GlX8.AT2fR3s4rW",
                             PhoneNumber = "+998913892034"
                         });
                 });

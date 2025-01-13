@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using NewEra_Cash___Carry.Data;
 
@@ -11,9 +12,11 @@ using NewEra_Cash___Carry.Data;
 namespace NewEra_Cash___Carry.Migrations
 {
     [DbContext(typeof(RetailOrderingSystemDbContext))]
-    partial class RetailOrderingSystemDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250112230442_SpecifyDecimalColumnTypes")]
+    partial class SpecifyDecimalColumnTypes
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -245,14 +248,14 @@ namespace NewEra_Cash___Carry.Migrations
                         new
                         {
                             Id = 1,
-                            PasswordHash = "$2a$11$65sWhs2Kmh/1skJgiRFwuebT8QnYO8DnhaV4mgC0JR04FmV1QOO0O",
-                            PhoneNumber = "+998913892033"
+                            PasswordHash = "hashedpassword1",
+                            PhoneNumber = "1234567890"
                         },
                         new
                         {
                             Id = 2,
-                            PasswordHash = "$2a$11$tIS2kfkJGo2gZgQHQNaejOhMrEAszTpUKbgjLbbAUiVZZ3b7WpUAu",
-                            PhoneNumber = "+998913892034"
+                            PasswordHash = "hashedpassword2",
+                            PhoneNumber = "0987654321"
                         });
                 });
 
