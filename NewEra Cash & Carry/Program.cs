@@ -2,14 +2,14 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using NewEra_Cash___Carry.Data;
-using NewEra_Cash___Carry.Helpers;
-using NewEra_Cash___Carry.Middlewares;
 using System.Text;
 using Serilog;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ApiExplorer;
 using System;
+using NewEra_Cash___Carry.Infrastructure.Data;
+using NewEra_Cash___Carry.API.Middlewares;
+using NewEra_Cash___Carry.Shared.Settings;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -37,7 +37,8 @@ builder.Services.AddSwaggerGen(options =>
             Version = description.ApiVersion.ToString(),
             Description = description.IsDeprecated ? "This API version is deprecated." : null
         });
-    }
+    } 
+
 
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
