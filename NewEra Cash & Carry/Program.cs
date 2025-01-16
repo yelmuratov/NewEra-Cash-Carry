@@ -119,6 +119,10 @@ builder.Services.AddScoped<IUserRepository, UserRepository>();          // User-
 builder.Services.AddScoped<IUserService, UserService>();                // User service
 builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
 builder.Services.AddScoped<ICategoryService, CategoryService>();
+builder.Services.AddScoped<IOrderRepository, OrderRepository>();
+builder.Services.AddScoped<IOrderService, OrderService>();
+builder.Services.AddScoped<IProductRepository, ProductRepository>();
+builder.Services.AddScoped<IProductService, ProductService>();
 
 
 // Register AutoMapper
