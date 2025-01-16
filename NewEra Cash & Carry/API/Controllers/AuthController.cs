@@ -1,15 +1,8 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
-using Microsoft.IdentityModel.Tokens;
-using NewEra_Cash___Carry.Core.Entities;
+using NewEra_Cash___Carry.Application.Interfaces;
 using NewEra_Cash___Carry.Core.DTOs.user;
-using NewEra_Cash___Carry.Infrastructure.Data;
-using NewEra_Cash___Carry.Shared.Settings;
+using System.Security.Claims;
 
 namespace NewEra_Cash___Carry.API.Controllers
 {
@@ -18,13 +11,11 @@ namespace NewEra_Cash___Carry.API.Controllers
     [ApiController]
     public class AuthController : ControllerBase
     {
-        private readonly RetailOrderingSystemDbContext _context;
-        private readonly AuthSettings _authSettings;
+        private readonly IUserService _userService;
 
-        public AuthController(RetailOrderingSystemDbContext context, IOptions<AuthSettings> authSettings)
+        public AuthController(IUserService userService)
         {
-            _context = context;
-            _authSettings = authSettings.Value;
+            _userService = userService;
         }
 
         /// <summary>
@@ -36,32 +27,15 @@ namespace NewEra_Cash___Carry.API.Controllers
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] UserRegisterDto userDto)
         {
-            if (await _context.Users.AnyAsync(u => u.PhoneNumber == userDto.PhoneNumber))
+            try
             {
-                return BadRequest(new { message = "A user with this phone number already exists." });
+                await _userService.RegisterUserAsync(userDto);
+                return Ok(new { message = "User registered successfully." });
             }
-
-            var user = new User
+            catch (Exception ex)
             {
-                PhoneNumber = userDto.PhoneNumber,
-                PasswordHash = BCrypt.Net.BCrypt.HashPassword(userDto.Password),
-                UserRoles = new List<UserRole>()
-            };
-
-            var defaultRole = await _context.Roles.FirstOrDefaultAsync(r => r.Name == "Customer");
-            if (defaultRole != null)
-            {
-                user.UserRoles.Add(new UserRole
-                {
-                    RoleId = defaultRole.Id,
-                    User = user
-                });
+                return BadRequest(new { message = ex.Message });
             }
-
-            _context.Users.Add(user);
-            await _context.SaveChangesAsync();
-
-            return Ok(new { message = "User registered successfully." });
         }
 
         /// <summary>
@@ -73,15 +47,15 @@ namespace NewEra_Cash___Carry.API.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] UserLoginDto userDto)
         {
-            var dbUser = await _context.Users.SingleOrDefaultAsync(u => u.PhoneNumber == userDto.PhoneNumber);
-
-            if (dbUser == null || !BCrypt.Net.BCrypt.Verify(userDto.Password, dbUser.PasswordHash))
+            try
             {
-                return Unauthorized(new { message = "Invalid phone number or password." });
+                var token = await _userService.LoginUserAsync(userDto);
+                return Ok(new { Token = token });
             }
-
-            var token = GenerateJwtToken(dbUser);
-            return Ok(new { Token = token });
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(new { message = ex.Message });
+            }
         }
 
         /// <summary>
@@ -92,22 +66,7 @@ namespace NewEra_Cash___Carry.API.Controllers
         public async Task<IActionResult> Logout()
         {
             var token = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
-            var jwtToken = new JwtSecurityTokenHandler().ReadToken(token) as JwtSecurityToken;
-
-            if (jwtToken != null)
-            {
-                var expiration = jwtToken.ValidTo;
-
-                var blacklistedToken = new BlacklistedToken
-                {
-                    Token = token,
-                    Expiration = expiration
-                };
-
-                _context.BlacklistedTokens.Add(blacklistedToken);
-                await _context.SaveChangesAsync();
-            }
-
+            await _userService.LogoutUserAsync(token);
             return Ok(new { message = "Successfully logged out." });
         }
 
@@ -124,58 +83,30 @@ namespace NewEra_Cash___Carry.API.Controllers
                 return Unauthorized(new { message = "User is not authenticated." });
             }
 
-            var user = await _context.Users
-                .Include(u => u.UserRoles)
-                    .ThenInclude(ur => ur.Role)
-                .FirstOrDefaultAsync(u => u.Id == int.Parse(userId));
-
+            var user = await _userService.GetUserByIdAsync(int.Parse(userId));
             if (user == null)
             {
                 return NotFound(new { message = "User not found." });
             }
 
-            var userDto = new UserDto
-            {
-                Id = user.Id,
-                PhoneNumber = user.PhoneNumber,
-                Roles = user.UserRoles.Select(ur => ur.Role.Name).ToList()
-            };
-
-            return Ok(userDto);
+            return Ok(user);
         }
 
         /// <summary>
-        /// Generates a JWT token for the specified user.
+        /// Refreshes the JWT token for the current user.
         /// </summary>
-        /// <param name="user">The user for whom the token is generated.</param>
-        /// <returns>A JWT token.</returns>
-        private string GenerateJwtToken(User user)
+        /// <returns>A new JWT token if the refresh is successful.</returns>
+        [HttpPost("refresh")]
+        public IActionResult RefreshToken()
         {
-            var tokenHandler = new JwtSecurityTokenHandler();
-            var key = Encoding.UTF8.GetBytes(_authSettings.Secret);
-
-            var claims = new List<Claim>
+            var userId = User.FindFirstValue(ClaimTypes.Name);
+            if (string.IsNullOrEmpty(userId))
             {
-                new Claim(ClaimTypes.Name, user.Id.ToString()),
-                new Claim(ClaimTypes.MobilePhone, user.PhoneNumber)
-            };
+                return Unauthorized(new { message = "User is not authenticated." });
+            }
 
-            var roles = _context.UserRoles
-                .Where(ur => ur.UserId == user.Id)
-                .Select(ur => ur.Role.Name)
-                .ToList();
-
-            claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
-
-            var tokenDescriptor = new SecurityTokenDescriptor
-            {
-                Subject = new ClaimsIdentity(claims),
-                Expires = DateTime.UtcNow.AddHours(1),
-                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
-            };
-
-            var token = tokenHandler.CreateToken(tokenDescriptor);
-            return tokenHandler.WriteToken(token);
+            // Refresh logic if required (optional implementation)
+            return Ok(new { message = "Token refreshed (placeholder)." });
         }
     }
 }

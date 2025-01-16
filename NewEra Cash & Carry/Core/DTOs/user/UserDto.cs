@@ -1,6 +1,9 @@
-﻿public class UserDto
+﻿namespace NewEra_Cash___Carry.Core.DTOs.user
 {
-    public int Id { get; set; }
-    public string PhoneNumber { get; set; }
-    public List<string> Roles { get; set; }
+    public class UserDto
+    {
+        public int Id { get; set; }
+        public string PhoneNumber { get; set; }
+        public List<string> Roles { get; set; }
+    }
 }

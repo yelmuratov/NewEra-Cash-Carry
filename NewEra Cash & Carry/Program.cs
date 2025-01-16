@@ -6,10 +6,15 @@ using System.Text;
 using Serilog;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ApiExplorer;
-using System;
 using NewEra_Cash___Carry.Infrastructure.Data;
 using NewEra_Cash___Carry.API.Middlewares;
 using NewEra_Cash___Carry.Shared.Settings;
+using NewEra_Cash___Carry.Application.Interfaces;
+using NewEra_Cash___Carry.Application.Services;
+using NewEra_Cash___Carry.Infrastructure.Repositories;
+using AutoMapper;
+using NewEra_Cash___Carry.Application.Profiles;
+using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -37,8 +42,7 @@ builder.Services.AddSwaggerGen(options =>
             Version = description.ApiVersion.ToString(),
             Description = description.IsDeprecated ? "This API version is deprecated." : null
         });
-    } 
-
+    }
 
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
@@ -72,9 +76,24 @@ builder.Services.AddDbContext<RetailOrderingSystemDbContext>(options =>
 
 // Configure AuthSettings
 builder.Services.Configure<AuthSettings>(builder.Configuration.GetSection("AuthSettings"));
+builder.Services.AddSingleton(sp => sp.GetRequiredService<IOptions<AuthSettings>>().Value);
 
 // Add JWT Authentication
 var authSettings = builder.Configuration.GetSection("AuthSettings").Get<AuthSettings>();
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+}).AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(authSettings.Secret)),
+        ValidateIssuer = false,
+        ValidateAudience = false
+    };
+});
 
 // Payment Integration
 builder.Services.Configure<PaymentSettings>(builder.Configuration.GetSection("PaymentSettings"));
@@ -94,21 +113,13 @@ builder.Services.AddVersionedApiExplorer(options =>
     options.SubstituteApiVersionInUrl = true; // Replace {version} in route
 });
 
-// Authentication
-builder.Services.AddAuthentication(options =>
-{
-    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-}).AddJwtBearer(options =>
-{
-    options.TokenValidationParameters = new TokenValidationParameters
-    {
-        ValidateIssuerSigningKey = true,
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(authSettings.Secret)),
-        ValidateIssuer = false,
-        ValidateAudience = false
-    };
-});
+// Register Repositories and Services
+builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>)); // Generic repository
+builder.Services.AddScoped<IUserRepository, UserRepository>();          // User-specific repository
+builder.Services.AddScoped<IUserService, UserService>();                // User service
+
+// Register AutoMapper
+builder.Services.AddAutoMapper(typeof(MappingProfile).Assembly);
 
 var app = builder.Build();
 
@@ -126,14 +137,11 @@ if (app.Environment.IsDevelopment())
     });
 }
 
+// Middleware
 app.UseHttpsRedirection();
-
-// Middlewares
 app.UseMiddleware<TokenBlacklistMiddleware>();
 app.UseMiddleware<ErrorHandlerMiddleware>();
-
-// Serilog
-app.UseSerilogRequestLogging();
+app.UseSerilogRequestLogging(); // Serilog Middleware
 
 // Add authentication and authorization middleware
 app.UseAuthentication();
@@ -142,7 +150,7 @@ app.UseAuthorization();
 // Map Controllers
 app.MapControllers();
 
-// Static Files
+// Serve Static Files
 app.UseStaticFiles();
 
 app.Run();
