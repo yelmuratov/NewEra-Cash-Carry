@@ -117,6 +117,9 @@ builder.Services.AddVersionedApiExplorer(options =>
 builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>)); // Generic repository
 builder.Services.AddScoped<IUserRepository, UserRepository>();          // User-specific repository
 builder.Services.AddScoped<IUserService, UserService>();                // User service
+builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
+builder.Services.AddScoped<ICategoryService, CategoryService>();
+
 
 // Register AutoMapper
 builder.Services.AddAutoMapper(typeof(MappingProfile).Assembly);

@@ -1,5 +1,7 @@
 ﻿using AutoMapper;
+using NewEra_Cash___Carry.Core.DTOs.category;
 using NewEra_Cash___Carry.Core.DTOs.user;
+using NewEra_Cash___Carry.Core.Entities;
 
 namespace NewEra_Cash___Carry.Application.Profiles
 {
@@ -14,6 +16,10 @@ namespace NewEra_Cash___Carry.Application.Profiles
             CreateMap<UserRegisterDto, User>()
                 .ForMember(dest => dest.PasswordHash, opt => opt.Ignore())
                 .ForMember(dest => dest.UserRoles, opt => opt.Ignore());
+
+            // Category mappings
+            CreateMap<CategoryPostDto, Category>();
+            CreateMap<CategoryUpdateDto, Category>();
         }
     }
 }
