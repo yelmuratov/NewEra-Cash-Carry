@@ -1,12 +1,8 @@
 ﻿using AutoMapper;
-using Microsoft.EntityFrameworkCore;
 using NewEra_Cash___Carry.Application.Interfaces;
 using NewEra_Cash___Carry.Core.DTOs.order;
 using NewEra_Cash___Carry.Core.Entities;
 using NewEra_Cash___Carry.DTOs.order.NewEra_Cash___Carry.DTOs.order;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace NewEra_Cash___Carry.Application.Services
 {

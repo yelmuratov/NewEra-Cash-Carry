@@ -39,8 +39,8 @@ namespace NewEra_Cash___Carry.Infrastructure.Repositories
 
             if (!string.IsNullOrEmpty(name)) query = query.Where(p => p.Name.Contains(name));
             if (categoryId.HasValue) query = query.Where(p => p.CategoryId == categoryId);
-            if (minPrice.HasValue) query = query.Where(p => p.Price >= minPrice);
-            if (maxPrice.HasValue) query = query.Where(p => p.Price <= maxPrice);
+            if (minPrice.HasValue) query = query.Where(p => p.Price >= minPrice.Value);
+            if (maxPrice.HasValue) query = query.Where(p => p.Price <= maxPrice.Value);
 
             query = sortBy?.ToLower() switch
             {
@@ -51,6 +51,7 @@ namespace NewEra_Cash___Carry.Infrastructure.Repositories
 
             return await query
                 .Include(p => p.Category)
+                .Include(p => p.ProductImages)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();

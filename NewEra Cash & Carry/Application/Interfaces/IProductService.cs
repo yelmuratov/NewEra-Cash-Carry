@@ -12,5 +12,6 @@ namespace NewEra_Cash___Carry.Application.Interfaces
         Task<ProductDto> CreateProductAsync(ProductPostDto productDto);
         Task UpdateProductAsync(int id, ProductPostDto productDto);
         Task DeleteProductAsync(int id);
+        Task<IEnumerable<object>> UploadImagesAsync(int id, List<IFormFile> files);
     }
 }
