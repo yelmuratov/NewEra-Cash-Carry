@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using NewEra_Cash___Carry.Application.Interfaces;
+using NewEra_Cash___Carry.Application.Interfaces.UserInterfaces;
 using NewEra_Cash___Carry.Core.DTOs.user;
 using System.Security.Claims;
 

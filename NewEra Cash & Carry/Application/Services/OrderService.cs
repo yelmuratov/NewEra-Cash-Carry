@@ -1,5 +1,7 @@
 ﻿using AutoMapper;
-using NewEra_Cash___Carry.Application.Interfaces;
+using NewEra_Cash___Carry.Application.Interfaces.OrderInterfaces;
+using NewEra_Cash___Carry.Application.Interfaces.ProductInterfaces;
+using NewEra_Cash___Carry.Application.Interfaces.UserInterfaces;
 using NewEra_Cash___Carry.Core.DTOs.order;
 using NewEra_Cash___Carry.Core.Entities;
 using NewEra_Cash___Carry.DTOs.order.NewEra_Cash___Carry.DTOs.order;

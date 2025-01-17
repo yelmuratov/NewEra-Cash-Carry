@@ -1,6 +1,6 @@
 ﻿using NewEra_Cash___Carry.Core.DTOs.user;
 
-namespace NewEra_Cash___Carry.Application.Interfaces
+namespace NewEra_Cash___Carry.Application.Interfaces.UserInterfaces
 {
     public interface IUserService
     {

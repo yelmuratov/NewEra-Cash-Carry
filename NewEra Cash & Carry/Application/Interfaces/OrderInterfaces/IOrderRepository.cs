@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace NewEra_Cash___Carry.Application.Interfaces
+namespace NewEra_Cash___Carry.Application.Interfaces.OrderInterfaces
 {
     public interface IOrderRepository : IRepository<Order>
     {

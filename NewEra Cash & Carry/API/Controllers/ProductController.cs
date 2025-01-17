@@ -1,10 +1,8 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using NewEra_Cash___Carry.Application.Interfaces;
+using NewEra_Cash___Carry.Application.Interfaces.ProductInterfaces;
 using NewEra_Cash___Carry.Core.DTOs.product;
 using Serilog;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 
 namespace NewEra_Cash___Carry.API.Controllers
 {

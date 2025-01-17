@@ -1,6 +1,6 @@
 ﻿using AutoMapper;
 using Microsoft.EntityFrameworkCore;
-using NewEra_Cash___Carry.Application.Interfaces;
+using NewEra_Cash___Carry.Application.Interfaces.ProductInterfaces;
 using NewEra_Cash___Carry.Core.DTOs.product;
 using NewEra_Cash___Carry.Core.Entities;
 using NewEra_Cash___Carry.Infrastructure.Data;

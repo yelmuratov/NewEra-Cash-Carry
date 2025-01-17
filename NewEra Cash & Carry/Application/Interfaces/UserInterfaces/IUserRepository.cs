@@ -1,7 +1,7 @@
 ﻿using NewEra_Cash___Carry.Core.Entities;
 using System.Threading.Tasks;
 
-namespace NewEra_Cash___Carry.Application.Interfaces;
+namespace NewEra_Cash___Carry.Application.Interfaces.UserInterfaces;
 
 public interface IUserRepository : IRepository<User>
 {

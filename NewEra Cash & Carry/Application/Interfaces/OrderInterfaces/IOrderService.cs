@@ -4,7 +4,7 @@ using NewEra_Cash___Carry.DTOs.order.NewEra_Cash___Carry.DTOs.order;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace NewEra_Cash___Carry.Application.Interfaces
+namespace NewEra_Cash___Carry.Application.Interfaces.OrderInterfaces
 {
     public interface IOrderService
     {

@@ -1,5 +1,5 @@
 ﻿using AutoMapper;
-using NewEra_Cash___Carry.Application.Interfaces;
+using NewEra_Cash___Carry.Application.Interfaces.CategoryInterfaces;
 using NewEra_Cash___Carry.Core.DTOs.category;
 using NewEra_Cash___Carry.Core.Entities;
 

@@ -32,10 +32,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Application\Interfaces\Category\" />
-    <Folder Include="Application\Interfaces\Order\" />
-    <Folder Include="Application\Interfaces\Product\" />
-    <Folder Include="Application\Interfaces\UserInterfaces\" />
     <Folder Include="Infrastructure\Migrations\" />
   </ItemGroup>
 

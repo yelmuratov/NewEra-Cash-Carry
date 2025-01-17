@@ -15,6 +15,10 @@ using NewEra_Cash___Carry.Infrastructure.Repositories;
 using AutoMapper;
 using NewEra_Cash___Carry.Application.Profiles;
 using Microsoft.Extensions.Options;
+using NewEra_Cash___Carry.Application.Interfaces.CategoryInterfaces;
+using NewEra_Cash___Carry.Application.Interfaces.OrderInterfaces;
+using NewEra_Cash___Carry.Application.Interfaces.ProductInterfaces;
+using NewEra_Cash___Carry.Application.Interfaces.UserInterfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
