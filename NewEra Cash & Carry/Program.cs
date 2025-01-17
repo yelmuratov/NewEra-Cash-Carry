@@ -20,6 +20,7 @@ using NewEra_Cash___Carry.Application.Interfaces.OrderInterfaces;
 using NewEra_Cash___Carry.Application.Interfaces.ProductInterfaces;
 using NewEra_Cash___Carry.Application.Interfaces.UserInterfaces;
 using NewEra_Cash___Carry.Application.Interfaces.PaymentInterfaces;
+using NewEra_Cash___Carry.Application.Interfaces.RoleInterfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -119,9 +120,9 @@ builder.Services.AddVersionedApiExplorer(options =>
 });
 
 // Register Repositories and Services
-builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>)); // Generic repository
-builder.Services.AddScoped<IUserRepository, UserRepository>();          // User-specific repository
-builder.Services.AddScoped<IUserService, UserService>();                // User service
+builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>)); 
+builder.Services.AddScoped<IUserRepository, UserRepository>();          
+builder.Services.AddScoped<IUserService, UserService>();                
 builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
 builder.Services.AddScoped<ICategoryService, CategoryService>();
 builder.Services.AddScoped<IOrderRepository, OrderRepository>();
@@ -130,6 +131,8 @@ builder.Services.AddScoped<IProductRepository, ProductRepository>();
 builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddScoped<IPaymentService, PaymentService>();
 builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
+builder.Services.AddScoped<IRoleRepository, RoleRepository>();
+builder.Services.AddScoped<IRoleService, RoleService>();
 
 
 // Register AutoMapper

@@ -8,6 +8,7 @@ using NewEra_Cash___Carry.Core.Entities;
 using NewEra_Cash___Carry.DTOs.order.NewEra_Cash___Carry.DTOs.order;
 using Stripe;
 using Product = NewEra_Cash___Carry.Core.Entities.Product;
+using NewEra_Cash___Carry.Core.DTOs.role;
 
 namespace NewEra_Cash___Carry.Application.Profiles
 {
@@ -59,6 +60,8 @@ namespace NewEra_Cash___Carry.Application.Profiles
                 .ForMember(dest => dest.PaymentIntentId, opt => opt.MapFrom(src => src.PaymentIntentId))
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status))
                 .ForMember(dest => dest.RefundDate, opt => opt.MapFrom(src => src.Created)); // Stripe's `Created` is a timestamp
+
+            CreateMap<RoleDto, Role>().ReverseMap();
         }
     }
 }
