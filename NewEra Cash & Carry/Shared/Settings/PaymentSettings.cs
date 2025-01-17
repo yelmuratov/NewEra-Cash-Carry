@@ -2,6 +2,7 @@
 {
     public class PaymentSettings
     {
-        public string SecretKey { get; set; }
+        public string PublishableKey { get; set; } // For client-side interactions
+        public string SecretKey { get; set; }     // For server-side interactions
     }
 }
