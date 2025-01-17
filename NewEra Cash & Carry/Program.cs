@@ -19,6 +19,7 @@ using NewEra_Cash___Carry.Application.Interfaces.CategoryInterfaces;
 using NewEra_Cash___Carry.Application.Interfaces.OrderInterfaces;
 using NewEra_Cash___Carry.Application.Interfaces.ProductInterfaces;
 using NewEra_Cash___Carry.Application.Interfaces.UserInterfaces;
+using NewEra_Cash___Carry.Application.Interfaces.PaymentInterfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -127,6 +128,8 @@ builder.Services.AddScoped<IOrderRepository, OrderRepository>();
 builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
 builder.Services.AddScoped<IProductService, ProductService>();
+builder.Services.AddScoped<IPaymentService, PaymentService>();
+builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
 
 
 // Register AutoMapper
