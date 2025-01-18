@@ -5,6 +5,8 @@ VisualStudioVersion = 17.12.35527.113
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NewEra Cash & Carry", "NewEra Cash & Carry\NewEra Cash & Carry.csproj", "{7EF4382C-6F5E-4569-96AE-ECCDBC1A9934}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NewEraCashAndCarry.Tests", "NewEraCashAndCarry.Tests\NewEraCashAndCarry.Tests.csproj", "{B4E3CE47-092B-4327-8C46-AE1E6DE464D2}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{7EF4382C-6F5E-4569-96AE-ECCDBC1A9934}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7EF4382C-6F5E-4569-96AE-ECCDBC1A9934}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7EF4382C-6F5E-4569-96AE-ECCDBC1A9934}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B4E3CE47-092B-4327-8C46-AE1E6DE464D2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B4E3CE47-092B-4327-8C46-AE1E6DE464D2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B4E3CE47-092B-4327-8C46-AE1E6DE464D2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B4E3CE47-092B-4327-8C46-AE1E6DE464D2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
