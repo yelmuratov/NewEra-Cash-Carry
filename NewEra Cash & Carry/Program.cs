@@ -25,6 +25,16 @@ using NewEra_Cash___Carry.Application.Interfaces.NotifyInterfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Add CORS policy
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAllOrigins",
+        builder => builder
+            .AllowAnyOrigin()   // Allow all domains (Change this for production)
+            .AllowAnyMethod()   // Allow GET, POST, PUT, DELETE, etc.
+            .AllowAnyHeader()); // Allow all headers
+});
+
 // Add Serilog configuration
 Log.Logger = new LoggerConfiguration()
     .WriteTo.Console()
@@ -79,7 +89,7 @@ builder.Services.AddSwaggerGen(options =>
 
 // Register DbContext
 builder.Services.AddDbContext<RetailOrderingSystemDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Configure AuthSettings
 builder.Services.Configure<AuthSettings>(builder.Configuration.GetSection("AuthSettings"));
@@ -168,6 +178,9 @@ app.UseSerilogRequestLogging(); // Serilog Middleware
 // Add authentication and authorization middleware
 app.UseAuthentication();
 app.UseAuthorization();
+
+//Allow cors
+app.UseCors("AllowAllOrigins");
 
 // Map Controllers
 app.MapControllers();

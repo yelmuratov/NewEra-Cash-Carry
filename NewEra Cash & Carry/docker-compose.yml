@@ -1,0 +1,32 @@
+﻿services:
+  postgres:
+    image: postgres:latest
+    container_name: newera_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: newera_user
+      POSTGRES_PASSWORD: newera_password
+      POSTGRES_DB: newera_db
+    ports:
+      - "5432:5432"
+    networks:
+      - neweracashcarry_network
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: newera_app
+    depends_on:
+      - postgres
+    environment:
+      - ConnectionStrings__DefaultConnection=Host=newera_postgres;Port=5432;Database=newera_db;Username=newera_user;Password=newera_password
+    ports:
+      - "8080:8080"
+      - "8081:8081"
+    networks:
+      - neweracashcarry_network
+
+networks:
+  neweracashcarry_network:
+    driver: bridge
